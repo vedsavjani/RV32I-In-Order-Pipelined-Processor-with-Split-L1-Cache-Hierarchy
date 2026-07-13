@@ -7,7 +7,7 @@ module regfile(
 
     logic [31:0] rf[31:0];
 
-    always_ff @(negedge clk)
+    always_ff @(posedge clk)
         if (we3) rf[wa3] <= wd3;
 
     assign rd1 = (ra1 != 0) ? rf[ra1] : 32'b0;
