@@ -7,6 +7,11 @@ module regfile(
 
     logic [31:0] rf[31:0];
 
+    initial begin
+        for (int i = 0; i < 32; i++) rf[i] = 0;
+        rf[2] = 32'h00003ffc;
+    end
+
     always_ff @(posedge clk)
         if (we3) rf[wa3] <= wd3;
 

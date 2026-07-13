@@ -3,11 +3,16 @@ module dmem(
     input logic  [31:0] a, wd,
     output logic [31:0] rd);
 
-    logic [31:0] RAM [63:0];
+    logic [31:0] RAM [0:4095]; // 16kB data memory
 
-    assign rd = RAM[a[7:2]];
+    initial begin
+        integer i;
+        for (i=0; i<4096; i++) RAM[i] = 32'b0;
+    end
+
+    assign rd = RAM[a[13:2]];
 
     always_ff @(posedge clk) begin
-        if (we) RAM[a[7:2]] <= wd;
+        if (we) RAM[a[13:2]] <= wd;
     end
 endmodule
