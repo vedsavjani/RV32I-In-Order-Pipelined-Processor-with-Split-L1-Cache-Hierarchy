@@ -1,92 +1,162 @@
 module datapath(
     input logic clk, reset,
-    input logic [2:0] ResultSrc,
-    input logic PCSrc, ALUSrc,
-    input logic RegWrite,
-    input logic jalrsel,
-    input logic [1:0]  ImmSrc,
-    input logic [3:0]  alucontrol,
-    output logic        zero, negative,
-    output logic [31:0] PC,
-    input logic [31:0] Instr,
-    output logic [31:0] aluresult, WriteData,
-    input logic [31:0] ReadData);
+    input logic [2:0] ResultSrcW,
+    input logic pcsrcE, ALUSrcE,
+    input logic RegWriteW,
+    input logic jalrselE,
+    input logic [1:0]  immsrcD,
+    input logic [3:0]  alucontrolE,
+    output logic zeroE, negativeE,
+    output logic [31:0] pcF,
+    input logic [31:0] instrF,
+    output logic [31:0] aluresultM, writedataM,
+    input logic [31:0] readdataM,
+    input logic stallF, stallD, flushD, flushE,
+    input logic [1:0] forwardAE, forwardBE,
+    output logic [4:0] rs1D, rs2D, rs1E, rs2E, rdE, rdM, rdW,
+    output [31:0] logic instrD);
 
-    logic [31:0] PCNext, PCPlus4, PCTarget, pcbase;
-    logic [31:0] ImmExt;
-    logic [31:0] srca, srcb;
-    logic [31:0] Result;
-    logic [31:0] auipcres;
-
-    flopr #(32) pcreg(
-        .clk(clk),
-        .reset(reset),
-        .d(PCNext),
-        .q(PC));
-
-    adder pcadd4(
-        .a(PC),
-        .b(32'd4),
-        .y(PCPlus4));
-
-    adder pcaddbranch(
-        .a(pcbase),
-        .b(ImmExt),
-        .y(PCTarget));
+    logic [31:0] instrD, instrE, instrM, instrW;
+    logic [31:0] pcF, pcD, pcE, pcM, pcW;
+    logic [31:0] pcnext, pcplus4F, pcplus4D, pcplus4E, pcplus4M, pcplus4M,
+    logic [31:0] pctargetE, pcbaseE;
+    logic [31:0] immextD, immextE;
+    logic [31:0] srcaE, srcbE;
+    logic [31:0] resultW;
+    logic [31:0] auipcresW;
+    logic [31:0] rd1D, rd2D, rs1D, rs2D, rdD, rs1E, rs2E, rdE, rd1E, rd2E;
+    logic [31:0] writedataE;
 
     mux2 #(32) pcmux(
-        .d0(PCPlus4),
-        .d1(PCTarget),
-        .s(PCSrc),
-        .y(PCNext));
+        .d0(pcplus4F),
+        .d1(pctargetE),
+        .s(pcsrcE),
+        .y(pcnext));
+
+    PCReg pcreg(
+        .clk(clk), 
+        .enn(stallF),
+        .reset(reset),
+        .pcnext(pcnext),
+        .pcF(pcF));
+
+    adder pcadd4(
+        .a(pcF),
+        .b(32'd4),
+        .y(pcplus4F));
+
+    // IF_ID pipeline
+    IF_ID_datapipe if_id_dp(
+        .clk(clk), 
+        .enn(stallD), 
+        .reset(reset),
+        .clr(flushD),
+        .instrF(instrF),
+        .instrD(instrD),
+        .pcF(pcF),
+        .pcD(pcD),
+        .pcplus4F(pcplus4F),
+        .pcplus4D(pcplus4D));
 
     regfile rf(
         .clk(clk),
-        .we3(RegWrite),
-        .ra1(Instr[19:15]),
-        .ra2(Instr[24:20]),
-        .wa3(Instr[11:7]),
-        .wd3(Result),
-        .rd1(srca),
-        .rd2(WriteData));
-
-    mux2 #(32) pctargetmux(
-        .d0(PC),
-        .d1(srca),
-        .s(jalrsel),
-        .y(pcbase));
+        .we3(RegWriteW),
+        .ra1(instrD[19:15]),
+        .ra2(instrD[24:20]),
+        .wa3(instrD[11:7]),
+        .wd3(resultW),
+        .rd1(rd1D),
+        .rd2(rd2D));
 
     extend ext(
-        .instr(Instr[31:0]),
-        .immsrc(ImmSrc),
-        .immext(ImmExt));
+        .instr(instrD[31:0]),
+        .immsrc(immsrcD),
+        .immext(immextD));
+
+
+    // ID_EX pipeline
+    ID_EX_datapipe id_ex_dp(
+    .clk(clk), 
+    .clr(flushE),
+    .reset(reset),
+    .rd1D(rd1D), .rd2D(rd2D), .instrD(instrD), .pcD(pcD),
+    .rd1E(rd1E), .rd2E(rd2E), .instrE(instrE), .pcE(pcE),
+    .rs1D(rs1D), .rs2D(rs2D), .rdD(rdD),
+    .rs1E(rs1E), .rs2E(rs2E), .rdE(rdE),
+    .immextD(immextD), .pcplus4D(pcplus4D), 
+    .immextE(immextE), .pcplus4E(pcplus4E));
+
+    mux2 #(32) pctargetmux(
+        .d0(pcE),
+        .d1(srcaE),
+        .s(jalrselE),
+        .y(pcbaseE));
+
+    adder pcaddbranch(
+        .a(pcbaseE),
+        .b(immextE),
+        .y(pctargetE));
+
+    mux3 #(32) forwardamux(
+        .d0(rd1E),
+        .d1(resultW),
+        .d2(aluresultM),
+        .s(forwardAE),
+        .y(srcaE));
+
+    mux3 #(32) forwardbmux(
+        .d0(rd2E),
+        .d1(resultW),
+        .d2(aluresultM),
+        .s(forwardBE),
+        .y(srcbE));
 
     mux2 #(32) srcbmux(
-        .d0(WriteData),
-        .d1(ImmExt),
-        .s(ALUSrc),
+        .d0(writedataE),
+        .d1(immextE),
+        .s(ALUSrcE),
         .y(srcb));
 
     alu alu(
-        .srca(srca),
-        .srcb(srcb),
-        .alucontrol(alucontrol),
-        .aluresult(aluresult),
-        .zero(zero), 
-        .negative(negative));
+        .srca(srcaE),
+        .srcb(srcbE),
+        .alucontrol(alucontrolE),
+        .aluresult(aluresultE),
+        .zero(zeroE), 
+        .negative(negativeE));
+
+    // EX_MEM pipeline
+    EX_MEM_datapipe ex_mem_dp(
+        .clk(clk), .reset(reset),
+        .aluresultE(aluresultE), .writedataE(writedataE), .pcE(pcE),
+        .aluresultM(aluresultM), .writedataM(writedataM), .pcM(pcM),
+        .rdE(rdE),
+        .rdM(rdM),
+        .instrE(instrE), .pcplus4E(pcplus4E),
+        .instrM(instrM), .pcplus4M(pcplus4M));
+
+    // MEM_WB pipeline
+    MEM_WB_datapipe mem_wb_dp(
+    .clk(clk), .reset(reset),
+    .aluresultM(aluresultM), .readdataM(readdataM),
+    .aluresultW(aluresultW), .readdataW(readdataW),
+    .pcM(pcM), .instrM(instrM), .pcplus4M(pcplus4M),
+    .pcW(pcW), .instrW(instrW), .pcplus4W(pcplus4W),
+    .rdM(rdM),
+    .rdW(rdW));
 
     adder auipcadd(
-        .a({Instr[31:12], 12'b0}),
-        .b(PC),
-        .y(auipcres));
+        .a({instrW[31:12], 12'b0}),
+        .b(pcW),
+        .y(auipcresW));
 
     mux5 #(32) resultmux(
-        .d0(aluresult),
-        .d1(ReadData),
-        .d2(PCPlus4),
-        .d3({Instr[31:12], 12'b0}),
-        .d4(auipcres),
-        .s(ResultSrc),
-        .y(Result));
+        .d0(aluresultW),
+        .d1(readdataW),
+        .d2(pcplus4W),
+        .d3({instrW[31:12], 12'b0}),
+        .d4(auipcresW),
+        .s(ResultSrcW),
+        .y(resultW));
 
 endmodule
