@@ -15,7 +15,7 @@ module riscvsingle(
     logic [4:0] rs1D, rs2D, rs1E, rs2E, rdE, rdM, rdW;
 
     controller c(
-        .clk(clk),
+        .clk(clk), .reset(reset),
         .op(instrD[6:0]),
         .funct3(instrD[14:12]),
         .funct7b5(instrD[30]),

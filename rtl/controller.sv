@@ -1,5 +1,5 @@
 module controller(
-    input logic clk,
+    input logic clk, reset,
     input  logic [6:0] op,
     input  logic [2:0] funct3,
     input  logic       funct7b5,
@@ -45,7 +45,7 @@ module controller(
         .alucontrol(alucontrolD));
 
     ID_EX_controlpipe cp1(
-        .clk(clk), .clr(flushE),
+        .clk(clk), .clr(flushE), .reset(reset),
         .RegWriteD(RegWriteD),
         .RegWriteE(RegWriteE),
         .ResultSrcD(ResultSrcD),
@@ -64,7 +64,7 @@ module controller(
         .jalrselE(jalrselE));
 
     EX_MEM_controlpipe cp2(
-        .clk(clk),
+        .clk(clk), .reset(reset),
         .RegWriteE(RegWriteE),
         .RegWriteM(RegWriteM),
         .ResultSrcE(ResultSrcE),
@@ -73,7 +73,7 @@ module controller(
         .MemWriteM(MemWriteM));
 
     MEM_WB_controlpipe cp3(
-        .clk(clk), 
+        .clk(clk), .reset(reset),
         .RegWriteM(RegWriteM),
         .RegWriteW(RegWriteW),
         .ResultSrcM(ResultSrcM),

@@ -1,5 +1,5 @@
 module ID_EX_controlpipe(
-    input clk, clr,
+    input clk, clr, reset,
     input logic RegWriteD,
     output logic RegWriteE,
     input logic [2:0] ResultSrcD,
@@ -18,21 +18,21 @@ module ID_EX_controlpipe(
     output logic jalrselE);
 
     always_ff @(posedge clk) begin
-        RegWriteE <= clr? 0: RegWriteD;
-        ResultSrcE <= clr? 3'b000: ResultSrcD;
-        MemWriteE <= clr? 0: MemWriteD;
-        JumpE <= clr? 0: JumpD;
-        BranchE <= clr? 0: BranchD;
-        alucontrolE <= clr? 4'b0000: alucontrolD;
-        ALUSrcE <= clr? 0: ALUSrcD;
-        jalrselE <= clr? 0: jalrselD;
+        RegWriteE <= (clr | reset)? 0: RegWriteD;
+        ResultSrcE <= (clr | reset)? 3'b000: ResultSrcD;
+        MemWriteE <= (clr | reset)? 0: MemWriteD;
+        JumpE <= (clr | reset)? 0: JumpD;
+        BranchE <= (clr | reset)? 0: BranchD;
+        alucontrolE <= (clr | reset)? 4'b0000: alucontrolD;
+        ALUSrcE <= (clr | reset)? 0: ALUSrcD;
+        jalrselE <= (clr | reset)? 0: jalrselD;
     end    
 
 endmodule
 
 
 module EX_MEM_controlpipe(
-    input clk,
+    input clk, reset,
     input logic RegWriteE,
     output logic RegWriteM,
     input logic [2:0] ResultSrcE,
@@ -41,23 +41,23 @@ module EX_MEM_controlpipe(
     output logic MemWriteM);
 
     always_ff @(posedge clk) begin
-        RegWriteM <= RegWriteE;
-        ResultSrcM <= ResultSrcE;
-        MemWriteM <= MemWriteE;
+        RegWriteM <= reset? 0: RegWriteE;
+        ResultSrcM <= reset? 3'b000: ResultSrcE;
+        MemWriteM <= reset? 0: MemWriteE;
     end
 endmodule
 
 
 module MEM_WB_controlpipe(
-    input clk, 
+    input clk, reset,
     input logic RegWriteM,
     output logic RegWriteW,
     input logic [2:0] ResultSrcM,
     output logic [2:0] ResultSrcW);
 
     always_ff @(posedge clk) begin
-        RegWriteW <= RegWriteM;
-        ResultSrcW <= ResultSrcM;
+        RegWriteW <= reset? 0: RegWriteM;
+        ResultSrcW <= reset? 3'b000: ResultSrcM;
     end
 
 endmodule
