@@ -24,7 +24,7 @@ module maindec(
             7'b1100111: controls = 13'b1_00_0_0_010_0_00_0_1; // jalr
             7'b0010111: controls = 13'b1_00_0_0_100_0_00_0_0; // auipc
             7'b0110111: controls = 13'b1_00_0_0_011_0_00_0_0; // lui
-            default:    controls = 13'bx_xx_x_x_xx_x_xx_x_x;
+            default:    controls = 13'b0_00_0_0_000_0_00_0_0;
         endcase
 
 endmodule

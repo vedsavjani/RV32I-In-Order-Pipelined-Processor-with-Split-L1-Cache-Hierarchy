@@ -23,7 +23,7 @@ module aludec(
                         else          alucontrol = 4'b1000; // srl, srli
                 3'b110: alucontrol = 4'b0011; // or, ori
                 3'b111: alucontrol = 4'b0010; // and, andi
-                default: alucontrol = 4'bxxxx;
+                default: alucontrol = 4'b0000;
             endcase
         endcase
 endmodule
