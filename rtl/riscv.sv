@@ -8,7 +8,7 @@ module riscvsingle(
 
     logic ALUSrcE, RegWriteM, RegWriteW, zeroE, negativeE, pcsrcE, jalrselE;
     logic [1:0] immsrcD, forwardAE, forwardBE;
-    logic [2:0] ResultSrcE, ResultSrcW;
+    logic [2:0] ResultSrcE, ResultSrcM, ResultSrcW;
     logic [3:0] alucontrolE;
     logic [31:0] instrD;
     logic stallF, stallD, flushD, flushE;
@@ -29,7 +29,8 @@ module riscvsingle(
         .jalrselE(jalrselE),
         .ResultSrcE(ResultSrcE),
         .RegWriteM(RegWriteM),
-        .flushE(flushE));
+        .flushE(flushE),
+        .ResultSrcM(ResultSrcM));
 
     datapath dp(
         .clk(clk), .reset(reset),
@@ -53,5 +54,6 @@ module riscvsingle(
         .rs1D(rs1D), .rs2D(rs2D), .rs1E(rs1E), .rs2E(rs2E), .rdE(rdE), .rdM(rdM), .rdW(rdW),
         .pcsrcE(pcsrcE), .ResultSrcE0(ResultSrcE[0]), .RegWriteM(RegWriteM), .RegWriteW(RegWriteW),
         .stallF(stallF), .stallD(stallD), .flushD(flushD), .flushE(flushE),
-        .forwardAE(forwardAE), .forwardBE(forwardBE));
+        .forwardAE(forwardAE), .forwardBE(forwardBE),
+        .ResultSrcM(ResultSrcM));
 endmodule

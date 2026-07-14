@@ -13,12 +13,13 @@ module controller(
     output logic jalrselE,
     output logic [2:0] ResultSrcE, 
     output logic RegWriteM,
-    input logic flushE);
+    input logic flushE,
+    output logic [2:0] ResultSrcM);
 
     logic [1:0] aluop;
     logic branchtakenE, jalrselD;
     logic RegWriteD, RegWriteE;
-    logic [2:0] ResultSrcD, ResultSrcM;
+    logic [2:0] ResultSrcD;
     logic MemWriteD, MemWriteE;
     logic BranchD, BranchE;
     logic JumpD, JumpE;
