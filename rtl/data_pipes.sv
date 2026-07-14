@@ -1,5 +1,5 @@
 module PCReg(
-    input clk, enn,
+    input logic clk, enn,
     input logic [31:0] pcnext,
     output logic [31:0] pcF);
 
@@ -13,7 +13,7 @@ endmodule
 
 
 module IF_ID_datapipe(
-    input clk, enn, clr,
+    input logic clk, enn, clr,
     input logic [31:0] instrF,
     output logic [31:0] instrD,
     input logic [31:0] pcF,
@@ -61,7 +61,7 @@ endmodule
 
 
 module EX_MEM_datapipe(
-    input clk,
+    input logic clk,
     input logic [31:0] aluresultE, writedataE, pcE,
     output logic [31:0] aluresultM, writedataM, pcM,
     input logic [4:0] rdE,
@@ -82,7 +82,7 @@ endmodule
 
 
 module MEM_WB_datapipe(
-    input clk, 
+    input logic clk, 
     input logic [31:0] aluresultM, readdataM,
     output logic [31:0] aluresultW, readdataW,
     input logic [31:0] pcM, instrM, pcplus4M,
