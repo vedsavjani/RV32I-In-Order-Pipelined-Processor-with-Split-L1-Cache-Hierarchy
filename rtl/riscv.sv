@@ -15,17 +15,21 @@ module riscvsingle(
     logic [4:0] rs1D, rs2D, rs1E, rs2E, rdE, rdM, rdW;
 
     controller c(
+        .clk(clk),
         .op(instrD[6:0]),
         .funct3(instrD[14:12]),
         .funct7b5(instrD[30]),
         .zeroE(zeroE), .negativeE(negativeE),
         .ResultSrcW(ResultSrcW),
         .MemWriteM(MemWriteM),
-        .pcsrcE(pcsrcE), ,ALUSrcE(ALUSrcE),
+        .pcsrcE(pcsrcE), .ALUSrcE(ALUSrcE),
         .RegWriteW(RegWriteW),
         .immsrcD(immsrcD),
         .alucontrolE(alucontrolE),
-        .jalrselE(jalrselE));
+        .jalrselE(jalrselE),
+        .ResultSrcE(ResultSrcE),
+        .RegWriteM(RegWriteM),
+        .flushE(flushE));
 
     datapath dp(
         .clk(clk), .reset(reset),

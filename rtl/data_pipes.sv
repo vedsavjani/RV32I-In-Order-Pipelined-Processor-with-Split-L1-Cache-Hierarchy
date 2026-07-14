@@ -43,8 +43,8 @@ module ID_EX_datapipe(
     output logic [31:0] rd1E, rd2E, instrE, pcE,
     input logic [4:0] rs1D, rs2D, rdD,
     output logic [4:0] rs1E, rs2E, rdE,
-    input [31:0] immextD, pcplus4D, 
-    output [31:0] immextE, pcplus4E);
+    input logic [31:0] immextD, pcplus4D, 
+    output logic [31:0] immextE, pcplus4E);
 
     always_ff @(posedge clk) begin
         rd1E <= (clr | reset) ? 32'h0 : rd1D;

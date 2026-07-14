@@ -14,18 +14,19 @@ module datapath(
     input logic stallF, stallD, flushD, flushE,
     input logic [1:0] forwardAE, forwardBE,
     output logic [4:0] rs1D, rs2D, rs1E, rs2E, rdE, rdM, rdW,
-    output [31:0] logic instrD);
+    output logic [31:0] instrD);
 
-    logic [31:0] instrD, instrE, instrM, instrW;
-    logic [31:0] pcF, pcD, pcE, pcM, pcW;
-    logic [31:0] pcnext, pcplus4F, pcplus4D, pcplus4E, pcplus4M, pcplus4M,
+    logic [31:0] instrE, instrM, instrW;
+    logic [31:0] pcD, pcE, pcM, pcW;
+    logic [31:0] pcnext, pcplus4F, pcplus4D, pcplus4E, pcplus4M, pcplus4W;
     logic [31:0] pctargetE, pcbaseE;
     logic [31:0] immextD, immextE;
     logic [31:0] srcaE, srcbE;
     logic [31:0] resultW;
     logic [31:0] auipcresW;
-    logic [31:0] rd1D, rd2D, rs1D, rs2D, rdD, rs1E, rs2E, rdE, rd1E, rd2E;
-    logic [31:0] writedataE;
+    logic [31:0] rd1D, rd2D, rd1E, rd2E;
+    logic [31:0] writedataE, aluresultE, aluresultW, readdataW;
+    logic [4:0] rdD;
 
     mux2 #(32) pcmux(
         .d0(pcplus4F),
@@ -63,7 +64,7 @@ module datapath(
         .we3(RegWriteW),
         .ra1(instrD[19:15]),
         .ra2(instrD[24:20]),
-        .wa3(instrD[11:7]),
+        .wa3(rdW),
         .wd3(resultW),
         .rd1(rd1D),
         .rd2(rd2D));
@@ -73,6 +74,9 @@ module datapath(
         .immsrc(immsrcD),
         .immext(immextD));
 
+    assign rs1D = instrD[19:15];
+    assign rs2D = instrD[24:20];
+    assign rdD = instrD[11:7];
 
     // ID_EX pipeline
     ID_EX_datapipe id_ex_dp(
@@ -109,13 +113,13 @@ module datapath(
         .d1(resultW),
         .d2(aluresultM),
         .s(forwardBE),
-        .y(srcbE));
+        .y(writedataE));
 
     mux2 #(32) srcbmux(
         .d0(writedataE),
         .d1(immextE),
         .s(ALUSrcE),
-        .y(srcb));
+        .y(srcbE));
 
     alu alu(
         .srca(srcaE),

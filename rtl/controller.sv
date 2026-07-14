@@ -1,4 +1,5 @@
 module controller(
+    input logic clk,
     input  logic [6:0] op,
     input  logic [2:0] funct3,
     input  logic       funct7b5,
@@ -9,17 +10,20 @@ module controller(
     output logic       RegWriteW,
     output logic [1:0] immsrcD,
     output logic [3:0] alucontrolE,
-    output logic jalrselE);
+    output logic jalrselE,
+    output logic [2:0] ResultSrcE, 
+    output logic RegWriteM,
+    input logic flushE);
 
     logic [1:0] aluop;
-    logic branchtakenE;
-    logic RegWriteD, RegWriteE, RegWriteM, RegWriteW;
-    logic [2:0] ResultSrcD, ResultSrcE, ResultSrcM, ResultSrcW;
-    logic MemWriteD, MemWriteE, MemWriteM;
+    logic branchtakenE, jalrselD;
+    logic RegWriteD, RegWriteE;
+    logic [2:0] ResultSrcD, ResultSrcM;
+    logic MemWriteD, MemWriteE;
     logic BranchD, BranchE;
     logic JumpD, JumpE;
-    logic [3:0] alucontrolD, alucontrolE;
-    logic ALUSrcD, ALUSrcE;
+    logic [3:0] alucontrolD;
+    logic ALUSrcD;
 
     maindec md(
         .op(op),

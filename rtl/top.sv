@@ -6,7 +6,7 @@ module top(
     logic [31:0] pcF, instrF, readdataM;
 
     
-    riscvsingle(
+    riscvsingle rv(
         .clk(clk), .reset(reset),
         .pcF(pcF),
         .instrF(instrF),
@@ -14,11 +14,11 @@ module top(
         .aluresultM(aluresultM), .writedataM(writedataM),
         .readdataM(readdataM));
 
-    imem(
+    imem imem(
         .a(pcF),
         .rd(instrF));
 
-    dmem(
+    dmem dmem(
         .clk(clk), .we(MemWriteM),
         .a(aluresultM), .wd(writedataM),
         .rd(readdataM));
