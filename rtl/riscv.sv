@@ -6,7 +6,7 @@ module riscvsingle(
     output logic [31:0] aluresultM, writedataM,
     input  logic [31:0] readdataM);
 
-    logic ALUSrcE, RegWriteM, RegWriteW, zeroE, negativeE, pcsrcE, jalrselE;
+    logic ALUSrcE, RegWriteE, RegWriteM, RegWriteW, zeroE, negativeE, pcsrcE, jalrselE;
     logic [1:0] immsrcD, forwardAE, forwardBE;
     logic [2:0] ResultSrcE, ResultSrcM, ResultSrcW;
     logic [3:0] alucontrolE;
@@ -21,13 +21,14 @@ module riscvsingle(
         .funct7b5(instrD[30]),
         .zeroE(zeroE), .negativeE(negativeE),
         .ResultSrcW(ResultSrcW),
+        .ResultSrcE(ResultSrcE),
         .MemWriteM(MemWriteM),
         .pcsrcE(pcsrcE), .ALUSrcE(ALUSrcE),
         .RegWriteW(RegWriteW),
+        .RegWriteE(RegWriteE),
         .immsrcD(immsrcD),
         .alucontrolE(alucontrolE),
         .jalrselE(jalrselE),
-        .ResultSrcE(ResultSrcE),
         .RegWriteM(RegWriteM),
         .flushE(flushE),
         .ResultSrcM(ResultSrcM));
@@ -52,8 +53,9 @@ module riscvsingle(
 
     hazard_unit hu(
         .rs1D(rs1D), .rs2D(rs2D), .rs1E(rs1E), .rs2E(rs2E), .rdE(rdE), .rdM(rdM), .rdW(rdW),
-        .pcsrcE(pcsrcE), .ResultSrcE0(ResultSrcE[0]), .RegWriteM(RegWriteM), .RegWriteW(RegWriteW),
+        .pcsrcE(pcsrcE), .ResultSrcE0(ResultSrcE[0]), .RegWriteM(RegWriteM), .RegWriteW(RegWriteW), .RegWriteE(RegWriteE),
         .stallF(stallF), .stallD(stallD), .flushD(flushD), .flushE(flushE),
         .forwardAE(forwardAE), .forwardBE(forwardBE),
-        .ResultSrcM(ResultSrcM));
+        .ResultSrcM(ResultSrcM),
+        .ResultSrcE(ResultSrcE));
 endmodule

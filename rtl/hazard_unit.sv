@@ -1,11 +1,11 @@
 module hazard_unit(
     input logic [4:0] rs1D, rs2D, rs1E, rs2E, rdE, rdM, rdW,
-    input logic pcsrcE, ResultSrcE0, RegWriteM, RegWriteW,
+    input logic pcsrcE, ResultSrcE0, RegWriteM, RegWriteW, RegWriteE,
     output logic stallF, stallD, flushD, flushE,
     output logic [1:0] forwardAE, forwardBE,
-    input logic [2:0] ResultSrcM);
+    input logic [2:0] ResultSrcM, ResultSrcE);
 
-    logic lwstall, memstall;
+    logic lwstall, memstall, exstall;
 
     always_comb begin
         if ((rs1E !=0) & (RegWriteM & (rs1E == rdM))) forwardAE = 2'b10;
@@ -22,12 +22,13 @@ module hazard_unit(
     always_comb begin
         lwstall = ResultSrcE0 & ((rs1D == rdE) | (rs2D == rdE));
         memstall = (ResultSrcM != 3'b000) & RegWriteM & ((rs1E == rdM & rs1E != 5'b0) | (rs2E == rdM & rs2E != 5'b0));
-        stallF = lwstall | memstall;
-        stallD = lwstall | memstall;
+        exstall = (ResultSrcE != 3'b000) & RegWriteE & ((rs1D == rdE & rs1D != 5'b0) | (rs2D == rdE & rs2D != 5'b0));
+        stallF = lwstall | memstall | exstall;
+        stallD = lwstall | memstall | exstall;
     end
 
     always_comb begin
         flushD = pcsrcE;
-        flushE = lwstall | pcsrcE | memstall;
+        flushE = lwstall | pcsrcE | memstall | exstall;
     end
 endmodule

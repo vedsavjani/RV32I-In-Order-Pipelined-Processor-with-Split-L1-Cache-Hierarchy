@@ -4,21 +4,19 @@ module controller(
     input  logic [2:0] funct3,
     input  logic       funct7b5,
     input  logic       zeroE, negativeE,
-    output logic [2:0] ResultSrcW,
     output logic       MemWriteM,
     output logic       pcsrcE, ALUSrcE,
-    output logic       RegWriteW,
+    output logic       RegWriteW, RegWriteE,
     output logic [1:0] immsrcD,
     output logic [3:0] alucontrolE,
     output logic jalrselE,
-    output logic [2:0] ResultSrcE, 
     output logic RegWriteM,
     input logic flushE,
-    output logic [2:0] ResultSrcM);
+    output logic [2:0] ResultSrcW, ResultSrcM, ResultSrcE);
 
     logic [1:0] aluop;
     logic branchtakenE, jalrselD;
-    logic RegWriteD, RegWriteE;
+    logic RegWriteD;
     logic [2:0] ResultSrcD;
     logic MemWriteD, MemWriteE;
     logic BranchD, BranchE;
