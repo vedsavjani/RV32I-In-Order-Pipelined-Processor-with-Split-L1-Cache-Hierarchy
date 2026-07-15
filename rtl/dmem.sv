@@ -5,10 +5,7 @@ module dmem(
 
     logic [31:0] RAM [0:4095]; // 16kB data memory
 
-    initial begin
-        integer i;
-        for (i=0; i<4096; i++) RAM[i] = 32'b0;
-    end
+    initial $readmemh("mem/quicksort_data.txt", RAM, 0, 4095);
 
     assign rd = RAM[a[13:2]];
 

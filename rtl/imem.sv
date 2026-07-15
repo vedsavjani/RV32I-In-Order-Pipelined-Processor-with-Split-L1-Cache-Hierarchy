@@ -4,7 +4,7 @@ module imem(
 
     logic [31:0] RAM[0:4095]; // 16kB instruction memory
 
-    initial $readmemh("mem/djikstras.txt", RAM);
+    initial $readmemh("mem/quicksort.txt", RAM);
 
     assign rd = RAM[a[31:2]]; // word aligned
 endmodule
