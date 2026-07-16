@@ -9,10 +9,7 @@ module dmem(
     // initial $readmemh("mem/quicksort_data.txt", RAM, 32'h2000>>2);
 
     // initializing dmem to zero for dijkstras 
-    initial begin
-        integer i;
-        for (i=0; i<4096; i++) RAM[i] = 32'b0;
-    end
+    initial $readmemh("mem/dijkstras3_data.txt", RAM, 32'h2000 >> 2);
 
     assign rd = RAM[a[13:2]];
 

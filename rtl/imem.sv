@@ -8,7 +8,7 @@ module imem(
     // initial $readmemh("mem/quicksort.txt", RAM);
 
     // for testing dijkstras
-    initial $readmemh("mem/djikstras.txt", RAM);
+    initial $readmemh("mem/dijkstras3.txt", RAM);
 
     assign rd = RAM[a[31:2]]; // word aligned
 endmodule

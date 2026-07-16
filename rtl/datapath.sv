@@ -14,9 +14,9 @@ module datapath(
     input logic stallF, stallD, flushD, flushE,
     input logic [1:0] forwardAE, forwardBE,
     output logic [4:0] rs1D, rs2D, rs1E, rs2E, rdE, rdM, rdW,
-    output logic [31:0] instrD);
+    output logic [31:0] instrD, instrE);
 
-    logic [31:0] instrE, instrM, instrW;
+    logic [31:0] instrM, instrW;
     logic [31:0] pcD, pcE, pcM, pcW;
     logic [31:0] pcnext, pcplus4F, pcplus4D, pcplus4E, pcplus4M, pcplus4W;
     logic [31:0] pctargetE, pcbaseE;

@@ -10,7 +10,7 @@ module riscvsingle(
     logic [1:0] immsrcD, forwardAE, forwardBE;
     logic [2:0] ResultSrcE, ResultSrcM, ResultSrcW;
     logic [3:0] alucontrolE;
-    logic [31:0] instrD;
+    logic [31:0] instrD, instrE;
     logic stallF, stallD, flushD, flushE;
     logic [4:0] rs1D, rs2D, rs1E, rs2E, rdE, rdM, rdW;
 
@@ -18,6 +18,7 @@ module riscvsingle(
         .clk(clk), .reset(reset),
         .op(instrD[6:0]),
         .funct3(instrD[14:12]),
+        .funct3E(instrE[14:12]),
         .funct7b5(instrD[30]),
         .zeroE(zeroE), .negativeE(negativeE),
         .ResultSrcW(ResultSrcW),
@@ -49,7 +50,7 @@ module riscvsingle(
         .stallF(stallF), .stallD(stallD), .flushD(flushD), .flushE(flushE),
         .forwardAE(forwardAE), .forwardBE(forwardBE),
         .rs1D(rs1D), .rs2D(rs2D), .rs1E(rs1E), .rs2E(rs2E), .rdE(rdE), .rdM(rdM), .rdW(rdW),
-        .instrD(instrD));
+        .instrD(instrD), .instrE(instrE));
 
     hazard_unit hu(
         .rs1D(rs1D), .rs2D(rs2D), .rs1E(rs1E), .rs2E(rs2E), .rdE(rdE), .rdM(rdM), .rdW(rdW),
