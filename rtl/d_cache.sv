@@ -111,9 +111,9 @@ module d_cache #(
                         end
 
                         // update lru data
-                        if (lru1[address[`INDEX]] < lru0[address[`INDEX]]) lru1[address[`INDEX]] <= lru1[address[`INDEX]] + 1;
-                        if (lru2[address[`INDEX]] < lru0[address[`INDEX]]) lru2[address[`INDEX]] <= lru2[address[`INDEX]] + 1;
-                        if (lru3[address[`INDEX]] < lru0[address[`INDEX]]) lru3[address[`INDEX]] <= lru3[address[`INDEX]] + 1;
+                        if (lru1[address[`INDEX]] <= lru0[address[`INDEX]]) lru1[address[`INDEX]] <= lru1[address[`INDEX]] + 1;
+                        if (lru2[address[`INDEX]] <= lru0[address[`INDEX]]) lru2[address[`INDEX]] <= lru2[address[`INDEX]] + 1;
+                        if (lru3[address[`INDEX]] <= lru0[address[`INDEX]]) lru3[address[`INDEX]] <= lru3[address[`INDEX]] + 1;
                         lru0[address[`INDEX]] <= 0;
                     end
 
@@ -131,9 +131,9 @@ module d_cache #(
                         end
 
                         // update lru data     
-                        if (lru0[address[`INDEX]] < lru1[address[`INDEX]]) lru0[address[`INDEX]] <= lru0[address[`INDEX]] + 1;
-                        if (lru2[address[`INDEX]] < lru1[address[`INDEX]]) lru2[address[`INDEX]] <= lru2[address[`INDEX]] + 1;
-                        if (lru3[address[`INDEX]] < lru1[address[`INDEX]]) lru3[address[`INDEX]] <= lru3[address[`INDEX]] + 1;
+                        if (lru0[address[`INDEX]] <= lru1[address[`INDEX]]) lru0[address[`INDEX]] <= lru0[address[`INDEX]] + 1;
+                        if (lru2[address[`INDEX]] <= lru1[address[`INDEX]]) lru2[address[`INDEX]] <= lru2[address[`INDEX]] + 1;
+                        if (lru3[address[`INDEX]] <= lru1[address[`INDEX]]) lru3[address[`INDEX]] <= lru3[address[`INDEX]] + 1;
                         lru1[address[`INDEX]] <= 0;                  
                     end
 
@@ -151,9 +151,9 @@ module d_cache #(
                         end
 
                         // update lru data    
-                        if (lru1[address[`INDEX]] < lru2[address[`INDEX]]) lru1[address[`INDEX]] <= lru1[address[`INDEX]] + 1;
-                        if (lru0[address[`INDEX]] < lru2[address[`INDEX]]) lru0[address[`INDEX]] <= lru0[address[`INDEX]] + 1;
-                        if (lru3[address[`INDEX]] < lru2[address[`INDEX]]) lru3[address[`INDEX]] <= lru3[address[`INDEX]] + 1;
+                        if (lru1[address[`INDEX]] <= lru2[address[`INDEX]]) lru1[address[`INDEX]] <= lru1[address[`INDEX]] + 1;
+                        if (lru0[address[`INDEX]] <= lru2[address[`INDEX]]) lru0[address[`INDEX]] <= lru0[address[`INDEX]] + 1;
+                        if (lru3[address[`INDEX]] <= lru2[address[`INDEX]]) lru3[address[`INDEX]] <= lru3[address[`INDEX]] + 1;
                         lru2[address[`INDEX]] <= 0;                    
                     end
 
@@ -171,9 +171,9 @@ module d_cache #(
                         end
 
                         // update lru data  
-                        if (lru1[address[`INDEX]] < lru3[address[`INDEX]]) lru1[address[`INDEX]] <= lru1[address[`INDEX]] + 1;
-                        if (lru2[address[`INDEX]] < lru3[address[`INDEX]]) lru2[address[`INDEX]] <= lru2[address[`INDEX]] + 1;
-                        if (lru0[address[`INDEX]] < lru3[address[`INDEX]]) lru0[address[`INDEX]] <= lru0[address[`INDEX]] + 1;
+                        if (lru1[address[`INDEX]] <= lru3[address[`INDEX]]) lru1[address[`INDEX]] <= lru1[address[`INDEX]] + 1;
+                        if (lru2[address[`INDEX]] <= lru3[address[`INDEX]]) lru2[address[`INDEX]] <= lru2[address[`INDEX]] + 1;
+                        if (lru0[address[`INDEX]] <= lru3[address[`INDEX]]) lru0[address[`INDEX]] <= lru0[address[`INDEX]] + 1;
                         lru3[address[`INDEX]] <= 0;                      
                     end
 
