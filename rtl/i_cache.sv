@@ -95,6 +95,8 @@ module i_cache #(
                         mem0[address[`I_INDEX]] <= mdin;
                         tag0[address[`I_INDEX]] <= address[`I_TAG];
                         valid0[address[`I_INDEX]] <= 1;
+                        lru0[address[`I_INDEX]]  <= 0;
+                        lru1[address[`I_INDEX]]  <= 1;
                     end
 
                     // way1 is invalid
@@ -102,6 +104,8 @@ module i_cache #(
                         mem1[address[`I_INDEX]] <= mdin;
                         tag1[address[`I_INDEX]] <= address[`I_TAG];
                         valid1[address[`I_INDEX]] <= 1;
+                        lru1[address[`I_INDEX]]  <= 0;
+                        lru0[address[`I_INDEX]]  <= 1;
                     end
 
                     // when all the ways are valid, then check which way is lru and then evict that way to accomodate new block
@@ -111,6 +115,8 @@ module i_cache #(
                         mem0[address[`I_INDEX]] <= mdin;
                         tag0[address[`I_INDEX]] <= address[`I_TAG];
                         valid0[address[`I_INDEX]] <= 1;
+                        lru0[address[`I_INDEX]]  <= 0;
+                        lru1[address[`I_INDEX]]  <= 1;
                     end
 
                     // way1 is lru
@@ -118,6 +124,8 @@ module i_cache #(
                         mem1[address[`I_INDEX]] <= mdin;
                         tag1[address[`I_INDEX]] <= address[`I_TAG];
                         valid1[address[`I_INDEX]] <= 1;
+                        lru1[address[`I_INDEX]]  <= 0;
+                        lru0[address[`I_INDEX]]  <= 1;
                     end
 
                     // finish miss state work and go back to idle state
