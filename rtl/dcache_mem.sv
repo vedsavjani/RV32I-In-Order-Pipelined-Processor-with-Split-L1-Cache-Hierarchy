@@ -6,8 +6,8 @@ module dcache_mem #(
     input logic clk,
     input logic [$clog2(DEPTH)-1: 0] mrdaddress,
     input logic [$clog2(DEPTH)-1: 0] mwraddress,
-    input logic rden,
-    input logic wren,
+    input logic mrden,
+    input logic mwren,
     input logic [WIDTH-1: 0] d,
     output logic [WIDTH-1: 0] q);
 
@@ -19,8 +19,8 @@ module dcache_mem #(
     end
 
     always_ff @(posedge clk) begin
-        if(wren) RAM[mwraddress] <= d;
-        if(rden) q <= RAM[mrdaddress];
+        if(mwren) RAM[mwraddress] <= d;
+        if(mrden) q <= RAM[mrdaddress];
     end
 
 endmodule
