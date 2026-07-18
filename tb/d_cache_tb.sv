@@ -58,45 +58,58 @@ module d_cache_tb();
 
     // monitor
     initial begin
-        $monitor("time=%4d | addr=%h | hm=%b | dout=%h | way0=%h | way1=%h | way2=%h | way3=%h | lru0=%d | lru1=%d | lru2=%d | lru3=%d | mwren=%b | mwraddr=%h",
+        $monitor("time=%4d | addr=%h | hm=%b | dout=%h | way0=%h | way1=%h | way2=%h | way3=%h | lru0=%d | lru1=%d | lru2=%d | lru3=%d",
             $time, address, hit_miss, dout,
             dut_cache.mem0[1], dut_cache.mem1[1],
             dut_cache.mem2[1], dut_cache.mem3[1],
             dut_cache.lru0[1], dut_cache.lru1[1],
-            dut_cache.lru2[1], dut_cache.lru3[1],
-            mwren, mwraddress);
+            dut_cache.lru2[1], dut_cache.lru3[1]);
     end
 
     // stimulus
-    // stimulus
     initial begin
+        // initialize inputs
         address = 0; din = 0; rden = 0; wren = 0;
-        @(negedge reset);
+        @(negedge reset);  // wait for reset to release
 
-        // setup — fill all 4 ways
+        // test 1: miss — 0x00000008
         address = 32'h00000008; rden = 1; wren = 0;
         repeat(4) @(posedge clk);
+
+        // test 2: hit — write to 0x00000008
         address = 32'h00000008; din = 32'hBADDBEEF; rden = 0; wren = 1;
         repeat(2) @(posedge clk);
+
+        // test 3: hit — write to 0x0000000B (same block, word1)
         address = 32'h0000000B; din = 32'h00000000; rden = 0; wren = 1;
         repeat(2) @(posedge clk);
+
+        // test 4: hit — write to 0x0000000C (same block, word2)
         address = 32'h0000000C; din = 32'hAAAAAAAA; rden = 0; wren = 1;
         repeat(2) @(posedge clk);
+
+        // test 5: miss — 0x10000008
         address = 32'h10000008; rden = 1; wren = 0;
         repeat(4) @(posedge clk);
+
+        // test 6: miss — 0x20000008
         address = 32'h20000008; rden = 1; wren = 0;
         repeat(4) @(posedge clk);
+
+        // test 7: miss — 0x30000008
         address = 32'h30000008; rden = 1; wren = 0;
         repeat(4) @(posedge clk);
 
-        // test 8
-        $display("=== test 8: eviction ===");
+        // test 8: miss + eviction — 0x40000008
         address = 32'h40000008; rden = 1; wren = 0;
         repeat(4) @(posedge clk);
 
-        // test 9
-        $display("=== test 9: should be miss ===");
+        // test 9: miss (evicted) — 0x00000008
         address = 32'h00000008; rden = 1; wren = 0;
+        repeat(4) @(posedge clk);
+
+        // test 10: miss + write allocate — 0x10000008
+        address = 32'h10000008; din = 32'hBADDBEEF; rden = 0; wren = 1;
         repeat(4) @(posedge clk);
 
         $finish;
