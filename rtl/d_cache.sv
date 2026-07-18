@@ -9,7 +9,7 @@ module d_cache #(
     parameter NSETS = 1024,
     parameter BLOCK_SIZE = 64,
     parameter WIDTH = 32, // CPU data width
-    parameter MWIDTH = 64, // Memory data width
+    parameter MWIDTH = 64, // Memory data width, (same as block size)
     parameter INDEX_WIDTH = 10,
     parameter TAG_WIDTH = 19,
     parameter OFFSET_WIDTH = 3
