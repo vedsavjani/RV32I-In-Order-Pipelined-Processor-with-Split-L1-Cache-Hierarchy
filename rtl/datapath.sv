@@ -11,7 +11,7 @@ module datapath(
     input logic [31:0] instrF,
     output logic [31:0] aluresultM, writedataM,
     input logic [31:0] readdataM,
-    input logic stallF, stallD, flushD, flushE,
+    input logic stallF, stallD, stallE, stallM, flushD, flushE, flushW,
     input logic [1:0] forwardAE, forwardBE,
     output logic [4:0] rs1D, rs2D, rs1E, rs2E, rdE, rdM, rdW,
     output logic [31:0] instrD, instrE);
@@ -83,6 +83,7 @@ module datapath(
     .clk(clk), 
     .clr(flushE),
     .reset(reset),
+    .enn(stallE),
     .rd1D(rd1D), .rd2D(rd2D), .instrD(instrD), .pcD(pcD),
     .rd1E(rd1E), .rd2E(rd2E), .instrE(instrE), .pcE(pcE),
     .rs1D(rs1D), .rs2D(rs2D), .rdD(rdD),
@@ -132,6 +133,7 @@ module datapath(
     // EX_MEM pipeline
     EX_MEM_datapipe ex_mem_dp(
         .clk(clk), .reset(reset),
+        .enn(stallM),
         .aluresultE(aluresultE), .writedataE(writedataE), .pcE(pcE),
         .aluresultM(aluresultM), .writedataM(writedataM), .pcM(pcM),
         .rdE(rdE),
@@ -142,6 +144,7 @@ module datapath(
     // MEM_WB pipeline
     MEM_WB_datapipe mem_wb_dp(
     .clk(clk), .reset(reset),
+    .clr(flushW),
     .aluresultM(aluresultM), .readdataM(readdataM),
     .aluresultW(aluresultW), .readdataW(readdataW),
     .pcM(pcM), .instrM(instrM), .pcplus4M(pcplus4M),

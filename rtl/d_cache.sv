@@ -286,10 +286,10 @@ module d_cache #(
 
     // mrden (combinational) - goes high when none of the 4 ways match the incoming address,
     // which starts memory fetch in the same cycle the miss is detected.
-    // mrden = !(hit in way0 || hit in way1 || hit in way2 || hit in way3)
-    assign mrden =    ~((valid0[address[`INDEX]] && (tag0[address[`INDEX]] == address[`TAG]))
+    // mrden = (if actually want to read or write) and !(hit in way0 || hit in way1 || hit in way2 || hit in way3)
+    assign mrden =    (rden | wren) &
+                     ~((valid0[address[`INDEX]] && (tag0[address[`INDEX]] == address[`TAG]))
                       ||(valid1[address[`INDEX]] && (tag1[address[`INDEX]] == address[`TAG])) 
                       ||(valid2[address[`INDEX]] && (tag2[address[`INDEX]] == address[`TAG])) 
                       ||(valid3[address[`INDEX]] && (tag3[address[`INDEX]] == address[`TAG])));
-
 endmodule

@@ -140,7 +140,8 @@ module i_cache #(
     assign mrdaddress = {address[`I_TAG], address[`I_INDEX], 2'b00};
 
     // high if !(hit in way0 || hit in way1)
-    assign mrden = ~((valid0[address[`I_INDEX]] && (tag0[address[`I_INDEX]] == address[`I_TAG]))
+    assign mrden =  (rden | wren) &
+                   ~((valid0[address[`I_INDEX]] && (tag0[address[`I_INDEX]] == address[`I_TAG]))
                    ||(valid1[address[`I_INDEX]] && (tag1[address[`I_INDEX]] == address[`I_TAG])));
 
 endmodule

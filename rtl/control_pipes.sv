@@ -1,5 +1,5 @@
 module ID_EX_controlpipe(
-    input clk, clr, reset,
+    input clk, clr, reset, enn,
     input logic RegWriteD,
     output logic RegWriteE,
     input logic [2:0] ResultSrcD,
@@ -18,21 +18,23 @@ module ID_EX_controlpipe(
     output logic jalrselE);
 
     always_ff @(posedge clk) begin
-        RegWriteE <= (clr | reset)? 0: RegWriteD;
-        ResultSrcE <= (clr | reset)? 3'b000: ResultSrcD;
-        MemWriteE <= (clr | reset)? 0: MemWriteD;
-        JumpE <= (clr | reset)? 0: JumpD;
-        BranchE <= (clr | reset)? 0: BranchD;
-        alucontrolE <= (clr | reset)? 4'b0000: alucontrolD;
-        ALUSrcE <= (clr | reset)? 0: ALUSrcD;
-        jalrselE <= (clr | reset)? 0: jalrselD;
-    end    
+        if (clr | reset) begin
+            RegWriteE <= 0; ResultSrcE <= 3'b000; MemWriteE <= 0;
+            JumpE <= 0; BranchE <= 0; alucontrolE <= 4'b0000;
+            ALUSrcE <= 0; jalrselE <= 0;
+        end
+        else if (~enn) begin
+            RegWriteE <= RegWriteD; ResultSrcE <= ResultSrcD; MemWriteE <= MemWriteD;
+            JumpE <= JumpD; BranchE <= BranchD; alucontrolE <= alucontrolD;
+            ALUSrcE <= ALUSrcD; jalrselE <= jalrselD;
+        end
+    end   
 
 endmodule
 
 
 module EX_MEM_controlpipe(
-    input clk, reset,
+    input clk, reset, enn,
     input logic RegWriteE,
     output logic RegWriteM,
     input logic [2:0] ResultSrcE,
@@ -41,23 +43,30 @@ module EX_MEM_controlpipe(
     output logic MemWriteM);
 
     always_ff @(posedge clk) begin
-        RegWriteM <= reset? 0: RegWriteE;
-        ResultSrcM <= reset? 3'b000: ResultSrcE;
-        MemWriteM <= reset? 0: MemWriteE;
+        if (reset) begin
+            RegWriteM <= 0; ResultSrcM <= 3'b000; MemWriteM <= 0;
+        end
+        else if (~enn) begin
+            RegWriteM <= RegWriteE; ResultSrcM <= ResultSrcE; MemWriteM <= MemWriteE;
+        end
     end
 endmodule
 
 
 module MEM_WB_controlpipe(
-    input clk, reset,
+    input clk, reset, clr, 
     input logic RegWriteM,
     output logic RegWriteW,
     input logic [2:0] ResultSrcM,
     output logic [2:0] ResultSrcW);
 
     always_ff @(posedge clk) begin
-        RegWriteW <= reset? 0: RegWriteM;
-        ResultSrcW <= reset? 3'b000: ResultSrcM;
+        if (reset | clr) begin
+            RegWriteW <= 0; ResultSrcW <= 3'b000;
+        end
+        else begin
+            RegWriteW <= RegWriteM; ResultSrcW <= ResultSrcM;
+        end
     end
 
 endmodule

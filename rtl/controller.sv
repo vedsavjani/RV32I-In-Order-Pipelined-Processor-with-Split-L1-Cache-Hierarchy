@@ -12,7 +12,7 @@ module controller(
     output logic [3:0] alucontrolE,
     output logic jalrselE,
     output logic RegWriteM,
-    input logic flushE,
+    input logic stallE, stallM, flushE, flushW,
     output logic [2:0] ResultSrcW, ResultSrcM, ResultSrcE);
 
     logic [1:0] aluop;
@@ -45,7 +45,7 @@ module controller(
         .alucontrol(alucontrolD));
 
     ID_EX_controlpipe cp1(
-        .clk(clk), .clr(flushE), .reset(reset),
+        .clk(clk), .clr(flushE), .reset(reset), .enn(stallE),
         .RegWriteD(RegWriteD),
         .RegWriteE(RegWriteE),
         .ResultSrcD(ResultSrcD),
@@ -64,7 +64,7 @@ module controller(
         .jalrselE(jalrselE));
 
     EX_MEM_controlpipe cp2(
-        .clk(clk), .reset(reset),
+        .clk(clk), .reset(reset), .enn(stallM),
         .RegWriteE(RegWriteE),
         .RegWriteM(RegWriteM),
         .ResultSrcE(ResultSrcE),
@@ -73,7 +73,7 @@ module controller(
         .MemWriteM(MemWriteM));
 
     MEM_WB_controlpipe cp3(
-        .clk(clk), .reset(reset),
+        .clk(clk), .reset(reset), .clr(flushW),
         .RegWriteM(RegWriteM),
         .RegWriteW(RegWriteW),
         .ResultSrcM(ResultSrcM),
