@@ -15,7 +15,7 @@ module dcache_mem #(
 
     initial begin
     if (FILE != "")
-        $readmemh(FILE, RAM);
+        $readmemh(FILE, RAM, 32'h2000>>3);
     end
 
     always_ff @(posedge clk) begin

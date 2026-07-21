@@ -17,7 +17,7 @@ module top(
     .i_mdin(i_mdin),
     .aluresultM(aluresultM), .writedataM(writedataM), .MemWriteM(MemWriteM));
 
-    dcache_mem dcm(
+    dcache_mem #(.FILE("mem/test2_data.txt")) dcm(
     .clk(clk),
     .mrdaddress(d_mrdaddress[18:3]),
     .mwraddress(d_mwraddress[18:3]),
@@ -26,7 +26,7 @@ module top(
     .d(d_mdout),
     .q(d_mdin));
 
-    icache_mem icm(
+    icache_mem #(.FILE("mem/test2.txt")) icm(
     .clk(clk), 
     .mrdaddress(i_mrdaddress[17:2]),
     .mrden(i_mrden),

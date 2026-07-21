@@ -11,11 +11,12 @@ main:   addi x2, x0, 5
 around: slt  x4, x7, x2
         add  x7, x4, x5
         sub  x7, x7, x2
-        sw   x7, 84(x3)
-        lw   x2, 96(x0)
+        lui  x6, 2          # x6 = 0x2000
+        sw   x7, 0(x6)      # store x7 to 0x2000 (replaces sw x7, 84(x3))
+        lw   x2, 0(x6)      # load from 0x2000 (replaces lw x2, 96(x0))
         add  x9, x2, x5
         jal  x3, end
         addi x2, x0, 1
 end:    add  x2, x2, x9
-        sw   x2, 0x20(x3)
+        sw   x2, 4(x6)      # store result to 0x2004 (replaces sw x2, 0x20(x3))
 done:   beq  x2, x2, done

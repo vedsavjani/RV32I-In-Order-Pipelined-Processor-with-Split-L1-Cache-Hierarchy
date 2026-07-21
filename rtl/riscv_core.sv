@@ -16,9 +16,13 @@ module riscv_core(
     logic stallF, stallD, stallE, stallM, flushD, flushE, flushW;
     logic [4:0] rs1D, rs2D, rs1E, rs2E, rdE, rdM, rdW;
     logic [31:0] pcF, readdataM;
-    logic dcache_hit, icache_hit;
+    logic dcache_hit, icache_hit; 
+
     logic dcache_rden;
     assign dcache_rden = (ResultSrcM == 3'b001);
+
+    logic mem_active;
+    assign mem_active = dcache_rden | MemWriteM; // checks if there is an actual memory operation in the MEM stage.
 
     controller c(
         .clk(clk), .reset(reset),
@@ -63,12 +67,12 @@ module riscv_core(
 
     hazard_unit hu(
         .rs1D(rs1D), .rs2D(rs2D), .rs1E(rs1E), .rs2E(rs2E), .rdE(rdE), .rdM(rdM), .rdW(rdW),
-        .pcsrcE(pcsrcE), .ResultSrcE0(ResultSrcE[0]), .RegWriteM(RegWriteM), .RegWriteW(RegWriteW), .RegWriteE(RegWriteE),
+        .pcsrcE(pcsrcE), .RegWriteM(RegWriteM), .RegWriteW(RegWriteW), .RegWriteE(RegWriteE),
         .stallF(stallF), .stallD(stallD), .stallE(stallE), .stallM(stallM), .flushD(flushD), .flushE(flushE), .flushW(flushW),
         .forwardAE(forwardAE), .forwardBE(forwardBE),
         .ResultSrcM(ResultSrcM),
         .ResultSrcE(ResultSrcE),
-        .icache_hit(icache_hit), .dcache_hit(dcache_hit));
+        .icache_hit(~i_mrden), .dcache_hit(~mem_active | dcache_hit));
 
     d_cache dc(
         .clk(clk), .reset(reset),

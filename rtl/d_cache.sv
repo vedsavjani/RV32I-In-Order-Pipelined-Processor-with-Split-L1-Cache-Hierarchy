@@ -69,7 +69,7 @@ module d_cache #(
         if(reset) begin
             state <= idle;
             hit_miss <= 0;
-            dout <= 0;
+           
             mwren <= 0;
             mwraddress <= 0;
             mdout <= 0;
@@ -99,15 +99,14 @@ module d_cache #(
 
                     // check way0
                     else if(valid0[address[`INDEX]] && (tag0[address[`INDEX]] == address[`TAG])) begin
-                        // read hit
-                        if (rden) dout <= address[`BLOCK_OFFSET] ? mem0[address[`INDEX]][63:32] : mem0[address[`INDEX]][31:0];
+                        
                         
                         // write hit
-                        else if(wren) begin
+                        if(wren) begin
                             if(address[`BLOCK_OFFSET]) mem0[address[`INDEX]][63:32] <= din;
                             else                       mem0[address[`INDEX]][31:0] <= din;
                             dirty0[address[`INDEX]] <= 1;
-                            dout <= 0;
+                           
                         end
 
                         // update lru data
@@ -119,15 +118,14 @@ module d_cache #(
 
                     // check way1
                     else if(valid1[address[`INDEX]] && (tag1[address[`INDEX]] == address[`TAG])) begin
-                        // read hit
-                        if (rden) dout <= address[`BLOCK_OFFSET] ? mem1[address[`INDEX]][63:32] : mem1[address[`INDEX]][31:0];
+                        
                         
                         // write hit
-                        else if(wren) begin
+                        if(wren) begin
                             if(address[`BLOCK_OFFSET]) mem1[address[`INDEX]][63:32] <= din;
                             else                       mem1[address[`INDEX]][31:0] <= din;
                             dirty1[address[`INDEX]] <= 1;
-                            dout <= 0;
+                            
                         end
 
                         // update lru data     
@@ -139,15 +137,14 @@ module d_cache #(
 
                     // check way2
                     else if(valid2[address[`INDEX]] && (tag2[address[`INDEX]] == address[`TAG])) begin
-                        // read hit
-                        if (rden) dout <= address[`BLOCK_OFFSET] ? mem2[address[`INDEX]][63:32] : mem2[address[`INDEX]][31:0];
+                        
                         
                         // write hit
-                        else if(wren) begin
+                        if(wren) begin
                             if(address[`BLOCK_OFFSET]) mem2[address[`INDEX]][63:32] <= din;
                             else                       mem2[address[`INDEX]][31:0] <= din;
                             dirty2[address[`INDEX]] <= 1;
-                            dout <= 0;
+                            
                         end
 
                         // update lru data    
@@ -159,15 +156,14 @@ module d_cache #(
 
                     // check way3
                     else if(valid3[address[`INDEX]] && (tag3[address[`INDEX]] == address[`TAG])) begin
-                        // read hit
-                        if (rden) dout <= address[`BLOCK_OFFSET] ? mem3[address[`INDEX]][63:32] : mem3[address[`INDEX]][31:0];
+                        
                         
                         // write hit
-                        else if(wren) begin
+                        if(wren) begin
                             if(address[`BLOCK_OFFSET]) mem3[address[`INDEX]][63:32] <= din;
                             else                       mem3[address[`INDEX]][31:0] <= din;
                             dirty3[address[`INDEX]] <= 1;
-                            dout <= 0;
+                            
                         end
 
                         // update lru data  
@@ -186,34 +182,70 @@ module d_cache #(
                     // one of the ways is invalid, then no need to evict
                     // way 0 is invalid
                     if(~valid0[address[`INDEX]]) begin
-                        mem0[address[`INDEX]] <= mdin;
                         tag0[address[`INDEX]] <= address[`TAG];
-                        dirty0[address[`INDEX]] <= 0;
                         valid0[address[`INDEX]] <= 1;
+
+                        // write-allocate : get the 64 bit block from memory and put din in it
+                        if (wren) begin
+                            if(address[`BLOCK_OFFSET]) mem0[address[`INDEX]] <= {din, mdin[31:0]}; // din goes to upper word
+                            else                       mem0[address[`INDEX]] <= {mdin[63:32],din}; // din goes to lower word
+                            dirty0[address[`INDEX]] <= 1; // block differs from memory, mark dirty
+                        end
+                        else begin
+                            mem0[address[`INDEX]] <= mdin; // read miss : load block as is
+                            dirty0[address[`INDEX]] <= 0;
+                        end
                     end
 
                     // way1 is invalid
                     else if(~valid1[address[`INDEX]]) begin
-                        mem1[address[`INDEX]] <= mdin;
                         tag1[address[`INDEX]] <= address[`TAG];
-                        dirty1[address[`INDEX]] <= 0;
                         valid1[address[`INDEX]] <= 1;
+
+                        // write-allocate : get the 64 bit block from memory and put din in it
+                        if (wren) begin
+                            if(address[`BLOCK_OFFSET]) mem1[address[`INDEX]] <= {din, mdin[31:0]}; // din goes to upper word
+                            else                       mem1[address[`INDEX]] <= {mdin[63:32],din}; // din goes to lower word
+                            dirty1[address[`INDEX]] <= 1; // block differs from memory, mark dirty
+                        end
+                        else begin
+                            mem1[address[`INDEX]] <= mdin; // read miss : load block as is
+                            dirty1[address[`INDEX]] <= 0;
+                        end
                     end
 
                     // way2 is invalid
                     else if(~valid2[address[`INDEX]]) begin
-                        mem2[address[`INDEX]] <= mdin;
                         tag2[address[`INDEX]] <= address[`TAG];
-                        dirty2[address[`INDEX]] <= 0;
                         valid2[address[`INDEX]] <= 1;
+
+                        // write-allocate : get the 64 bit block from memory and put din in it
+                        if (wren) begin
+                            if(address[`BLOCK_OFFSET]) mem2[address[`INDEX]] <= {din, mdin[31:0]}; // din goes to upper word
+                            else                       mem2[address[`INDEX]] <= {mdin[63:32],din}; // din goes to lower word
+                            dirty2[address[`INDEX]] <= 1; // block differs from memory, mark dirty
+                        end
+                        else begin
+                            mem2[address[`INDEX]] <= mdin; // read miss : load block as is
+                            dirty2[address[`INDEX]] <= 0;
+                        end
                     end
 
                     // way3 is invalid
                     else if(~valid3[address[`INDEX]]) begin
-                        mem3[address[`INDEX]] <= mdin;
                         tag3[address[`INDEX]] <= address[`TAG];
-                        dirty3[address[`INDEX]] <= 0;
                         valid3[address[`INDEX]] <= 1;
+
+                        // write-allocate : get the 64 bit block from memory and put din in it
+                        if (wren) begin
+                            if(address[`BLOCK_OFFSET]) mem3[address[`INDEX]] <= {din, mdin[31:0]}; // din goes to upper word
+                            else                       mem3[address[`INDEX]] <= {mdin[63:32],din}; // din goes to lower word
+                            dirty3[address[`INDEX]] <= 1; // block differs from memory, mark dirty
+                        end
+                        else begin
+                            mem3[address[`INDEX]] <= mdin; // read miss : load block as is
+                            dirty3[address[`INDEX]] <= 0;
+                        end
                     end
 
                     // when all the ways are valid, then check which way is lru and then evict that way to accomodate new block
@@ -225,10 +257,19 @@ module d_cache #(
                             mwren <= 1;
                             mdout <= mem0[address[`INDEX]];
                         end
-                        mem0[address[`INDEX]] <= mdin;
                         tag0[address[`INDEX]] <= address[`TAG];
                         valid0[address[`INDEX]] <= 1;
-                        dirty0[address[`INDEX]] <= 0;
+
+                        // write-allocate: splice din into the fetched block if it's a store miss
+                        if (wren) begin
+                            if (address[`BLOCK_OFFSET]) mem0[address[`INDEX]] <= {din, mdin[31:0]};   // din goes to upper word
+                            else                        mem0[address[`INDEX]] <= {mdin[63:32], din};  // din goes to lower word
+                            dirty0[address[`INDEX]] <= 1; // block differs from memory, mark dirty 
+                        end                             
+                        else begin
+                            mem0[address[`INDEX]] <= mdin; // read miss: load block as-is
+                            dirty0[address[`INDEX]] <= 0;
+                        end
                     end
 
                     // way1 is lru
@@ -239,10 +280,19 @@ module d_cache #(
                             mwren <= 1;
                             mdout <= mem1[address[`INDEX]];
                         end
-                        mem1[address[`INDEX]] <= mdin;
                         tag1[address[`INDEX]] <= address[`TAG];
                         valid1[address[`INDEX]] <= 1;
-                        dirty1[address[`INDEX]] <= 0;
+
+                        // write-allocate: splice din into the fetched block if it's a store miss
+                        if (wren) begin
+                            if (address[`BLOCK_OFFSET]) mem1[address[`INDEX]] <= {din, mdin[31:0]};   // din goes to upper word
+                            else                        mem1[address[`INDEX]] <= {mdin[63:32], din};  // din goes to lower word
+                            dirty1[address[`INDEX]] <= 1; // block differs from memory, mark dirty 
+                        end                             
+                        else begin
+                            mem1[address[`INDEX]] <= mdin; // read miss: load block as-is
+                            dirty1[address[`INDEX]] <= 0;
+                        end
                     end
 
                     // way2 is lru
@@ -253,10 +303,19 @@ module d_cache #(
                             mwren <= 1;
                             mdout <= mem2[address[`INDEX]];
                         end
-                        mem2[address[`INDEX]] <= mdin;
                         tag2[address[`INDEX]] <= address[`TAG];
                         valid2[address[`INDEX]] <= 1;
-                        dirty2[address[`INDEX]] <= 0;
+
+                        // write-allocate: splice din into the fetched block if it's a store miss
+                        if (wren) begin
+                            if (address[`BLOCK_OFFSET]) mem2[address[`INDEX]] <= {din, mdin[31:0]};   // din goes to upper word
+                            else                        mem2[address[`INDEX]] <= {mdin[63:32], din};  // din goes to lower word
+                            dirty2[address[`INDEX]] <= 1; // block differs from memory, mark dirty 
+                        end                             
+                        else begin
+                            mem2[address[`INDEX]] <= mdin; // read miss: load block as-is
+                            dirty2[address[`INDEX]] <= 0;
+                        end
                     end
 
                     // way3 is lru
@@ -267,10 +326,19 @@ module d_cache #(
                             mwren <= 1;
                             mdout <= mem3[address[`INDEX]];
                         end
-                        mem3[address[`INDEX]] <= mdin;
                         tag3[address[`INDEX]] <= address[`TAG];
                         valid3[address[`INDEX]] <= 1;
-                        dirty3[address[`INDEX]] <= 0;
+
+                        // write-allocate: splice din into the fetched block if it's a store miss
+                        if (wren) begin
+                            if (address[`BLOCK_OFFSET]) mem3[address[`INDEX]] <= {din, mdin[31:0]};   // din goes to upper word
+                            else                        mem3[address[`INDEX]] <= {mdin[63:32], din};  // din goes to lower word
+                            dirty3[address[`INDEX]] <= 1; // block differs from memory, mark dirty 
+                        end                             
+                        else begin
+                            mem3[address[`INDEX]] <= mdin; // read miss: load block as-is
+                            dirty3[address[`INDEX]] <= 0;
+                        end
                     end
 
                     // finish miss state work and go back to idle state
@@ -280,7 +348,19 @@ module d_cache #(
         end
     end
 
-    // hit_miss, dout, mwren, mdout, mwraddress is driven from the always_ff block
+    // hit_miss, mwren, mdout, mwraddress is driven from the always_ff block
+
+    always @(*) begin
+        dout = 0;
+        if      (valid0[address[`INDEX]] && tag0[address[`INDEX]] == address[`TAG])
+            dout = address[`BLOCK_OFFSET] ? mem0[address[`INDEX]][63:32] : mem0[address[`INDEX]][31:0];
+        else if (valid1[address[`INDEX]] && tag1[address[`INDEX]] == address[`TAG])
+            dout = address[`BLOCK_OFFSET] ? mem1[address[`INDEX]][63:32] : mem1[address[`INDEX]][31:0];
+        else if (valid2[address[`INDEX]] && tag2[address[`INDEX]] == address[`TAG])
+            dout = address[`BLOCK_OFFSET] ? mem2[address[`INDEX]][63:32] : mem2[address[`INDEX]][31:0];
+        else if (valid3[address[`INDEX]] && tag3[address[`INDEX]] == address[`TAG])
+            dout = address[`BLOCK_OFFSET] ? mem3[address[`INDEX]][63:32] : mem3[address[`INDEX]][31:0];
+    end
 
     assign mrdaddress = {address[`TAG], address[`INDEX], 3'b000};
 
