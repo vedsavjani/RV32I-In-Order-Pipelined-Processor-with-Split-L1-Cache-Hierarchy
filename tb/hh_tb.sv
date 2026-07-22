@@ -23,12 +23,15 @@ module testbench();
     end
 
     initial #50000 begin
+        // The d_cache is write-back: 0x2000/0x2004 are never evicted by this
+        // program, so the correct values live in the cache line (dirty, not
+        // yet flushed to dcache_mem), not in backing memory.
         $display("=== HH Test Results ===");
-        $display("mem[0x2000] = 0x%08h (expected 0x00000007)", dut.dcm.RAM[32'h2000>>3][31:0]);
-        $display("mem[0x2004] = 0x%08h (expected 0x00000019)", dut.dcm.RAM[32'h2000>>3][63:32]);
+        $display("cache[0x2000] = 0x%08h (expected 0x00000007)", dut.rv.dc.mem0[0][31:0]);
+        $display("cache[0x2004] = 0x%08h (expected 0x00000019)", dut.rv.dc.mem0[0][63:32]);
 
-        if (dut.dcm.RAM[32'h2000>>3][31:0]  === 32'd7 &&
-            dut.dcm.RAM[32'h2000>>3][63:32] === 32'd25)
+        if (dut.rv.dc.mem0[0][31:0]  === 32'd7 &&
+            dut.rv.dc.mem0[0][63:32] === 32'd25)
             $display("Simulation succeeded");
         else
             $display("Simulation failed");
