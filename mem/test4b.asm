@@ -1,7 +1,10 @@
 # Test 4b: LRU eviction - fill 4 ways at same index, force 5th miss
 # All addresses map to index 0 (bits [12:3] = 0), different tags
 # 0x2000=tag1, 0x4000=tag2, 0x6000=tag3, 0x8000=tag4, 0xA000=tag5
-# Expected: x7=0 (evicted, fetched from dcache_mem which has 0)
+# Expected: x7=42 (way0/0x2000 is evicted by the 5th store, but the block
+# is dirty, so eviction writes it back to dcache_mem before reuse; the
+# re-fetch on the final lw correctly reads the written-back 42, per this
+# cache's write-back policy)
 .text
 main:
     lui  x1, 2

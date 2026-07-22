@@ -19,7 +19,7 @@ module testbench();
             dut.rv.dp.rf.rf[6],
             dut.rv.dp.rf.rf[7]);
         if (dut.rv.dp.rf.rf[6] === 32'd42 &&
-            dut.rv.dp.rf.rf[7] === 32'd0)
+            dut.rv.dp.rf.rf[7] === 32'd42)
             $display("Test 4b PASSED");
         else
             $display("Test 4b FAILED");
