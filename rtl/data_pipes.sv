@@ -104,7 +104,7 @@ endmodule
 
 
 module MEM_WB_datapipe(
-    input logic clk, reset, clr,
+    input logic clk, reset, clr, enn,
     input logic [31:0] aluresultM, readdataM,
     output logic [31:0] aluresultW, readdataW,
     input logic [31:0] pcM, instrM, pcplus4M,
@@ -121,7 +121,7 @@ module MEM_WB_datapipe(
             pcplus4W <= 32'h0; 
             rdW <= 5'h0;
         end
-        else begin
+        else if (~enn) begin
             aluresultW <= aluresultM; 
             readdataW <= readdataM;
             pcW <= pcM; 

@@ -73,7 +73,7 @@ module controller(
         .MemWriteM(MemWriteM));
 
     MEM_WB_controlpipe cp3(
-        .clk(clk), .reset(reset), .clr(flushW),
+        .clk(clk), .reset(reset), .clr(flushW), .enn(stallM),
         .RegWriteM(RegWriteM),
         .RegWriteW(RegWriteW),
         .ResultSrcM(ResultSrcM),

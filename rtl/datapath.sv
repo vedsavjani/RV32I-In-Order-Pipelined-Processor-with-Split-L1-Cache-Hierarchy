@@ -144,7 +144,7 @@ module datapath(
     // MEM_WB pipeline
     MEM_WB_datapipe mem_wb_dp(
     .clk(clk), .reset(reset),
-    .clr(flushW),
+    .clr(flushW), .enn(stallM),
     .aluresultM(aluresultM), .readdataM(readdataM),
     .aluresultW(aluresultW), .readdataW(readdataW),
     .pcM(pcM), .instrM(instrM), .pcplus4M(pcplus4M),

@@ -54,7 +54,7 @@ endmodule
 
 
 module MEM_WB_controlpipe(
-    input clk, reset, clr, 
+    input logic clk, reset, clr, enn,
     input logic RegWriteM,
     output logic RegWriteW,
     input logic [2:0] ResultSrcM,
@@ -62,11 +62,12 @@ module MEM_WB_controlpipe(
 
     always_ff @(posedge clk) begin
         if (reset | clr) begin
-            RegWriteW <= 0; ResultSrcW <= 3'b000;
+            RegWriteW <= 1'b0; 
+            ResultSrcW <= 3'b000;
         end
-        else begin
-            RegWriteW <= RegWriteM; ResultSrcW <= ResultSrcM;
+        else if (~enn) begin
+            RegWriteW <= RegWriteM; 
+            ResultSrcW <= ResultSrcM;
         end
     end
-
 endmodule
