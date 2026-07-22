@@ -19,6 +19,10 @@ module i_cache #(
     input logic rden,                    // read enable, high when fetching instructions
     output logic hit_miss,               // 1 it hit, 0 while handling miss
     output logic [WIDTH-1: 0] dout,      // 32 bit instr returned to cpu
+    output logic [WIDTH-1: 0] doutaddr,  // address dout actually corresponds to
+                                          // (dout updates only on a confirmed hit,
+                                          // which can lag the current `address`
+                                          // input by a variable number of cycles)
     output logic [WIDTH-1:0] mrdaddress, // address sent to memory to fetch missing block
     output logic mrden,                  // memory read enable
     input logic [MWIDTH-1: 0] mdin       // 32 bit instruction block from memory
@@ -46,6 +50,7 @@ module i_cache #(
             state <= idle;
             hit_miss <= 0;
             dout <= 0;
+            doutaddr <= 0;
             for (int i=0; i < NSETS; i++) begin
                 valid0[i] <= 0; lru0[i] <= 0;
                 valid1[i] <= 0; lru1[i] <= 0;
@@ -66,7 +71,10 @@ module i_cache #(
                     // check way0
                     else if(valid0[address[`I_INDEX]] && (tag0[address[`I_INDEX]] == address[`I_TAG])) begin
                         // read hit
-                        if (rden) dout <= mem0[address[`I_INDEX]];
+                        if (rden) begin
+                            dout <= mem0[address[`I_INDEX]];
+                            doutaddr <= address;
+                        end
 
                         // update lru
                         lru0[address[`I_INDEX]] <= 0;
@@ -76,7 +84,10 @@ module i_cache #(
                     // check way1
                     else if(valid1[address[`I_INDEX]] && (tag1[address[`I_INDEX]] == address[`I_TAG])) begin
                         // read hit
-                        if (rden) dout <= mem1[address[`I_INDEX]];
+                        if (rden) begin
+                            dout <= mem1[address[`I_INDEX]];
+                            doutaddr <= address;
+                        end
 
                         // update lru
                         lru1[address[`I_INDEX]] <= 0;

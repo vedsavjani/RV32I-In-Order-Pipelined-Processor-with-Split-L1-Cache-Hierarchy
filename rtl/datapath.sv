@@ -9,6 +9,10 @@ module datapath(
     output logic zeroE, negativeE,
     output logic [31:0] pcF,
     input logic [31:0] instrF,
+    input logic [31:0] instrPCF, // address instrF actually corresponds to
+                                  // (i_cache's dout lags pcF by a variable
+                                  // number of cycles, so pcF itself cannot
+                                  // be latched alongside instrF into IF_ID)
     output logic [31:0] aluresultM, writedataM,
     input logic [31:0] readdataM,
     input logic stallF, stallD, stallE, stallM, flushD, flushE, flushW,
@@ -18,7 +22,7 @@ module datapath(
 
     logic [31:0] instrM, instrW;
     logic [31:0] pcD, pcE, pcM, pcW;
-    logic [31:0] pcnext, pcplus4F, pcplus4D, pcplus4E, pcplus4M, pcplus4W;
+    logic [31:0] pcnext, pcplus4F, instrPCplus4F, pcplus4D, pcplus4E, pcplus4M, pcplus4W;
     logic [31:0] pctargetE, pcbaseE;
     logic [31:0] immextD, immextE;
     logic [31:0] srcaE, srcbE;
@@ -35,28 +39,38 @@ module datapath(
         .y(pcnext));
 
     PCReg pcreg(
-        .clk(clk), 
+        .clk(clk),
         .enn(stallF),
         .reset(reset),
         .pcnext(pcnext),
         .pcF(pcF));
 
+    // pcplus4F (sequential next-fetch address) must track the live pcF, not
+    // instrPCF - it feeds pcmux/pcnext every cycle.
     adder pcadd4(
         .a(pcF),
         .b(32'd4),
         .y(pcplus4F));
 
+    // instrPCplus4F is the return-address companion to instrPCF (the address
+    // instrF actually corresponds to) and is what gets latched into IF_ID
+    // alongside it, for downstream JAL/AUIPC-style pc-relative use.
+    adder instrpcadd4(
+        .a(instrPCF),
+        .b(32'd4),
+        .y(instrPCplus4F));
+
     // IF_ID pipeline
     IF_ID_datapipe if_id_dp(
-        .clk(clk), 
-        .enn(stallD), 
+        .clk(clk),
+        .enn(stallD),
         .reset(reset),
         .clr(flushD),
         .instrF(instrF),
         .instrD(instrD),
-        .pcF(pcF),
+        .pcF(instrPCF),
         .pcD(pcD),
-        .pcplus4F(pcplus4F),
+        .pcplus4F(instrPCplus4F),
         .pcplus4D(pcplus4D));
 
     regfile rf(

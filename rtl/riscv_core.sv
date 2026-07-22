@@ -12,7 +12,7 @@ module riscv_core(
     logic [1:0] immsrcD, forwardAE, forwardBE;
     logic [2:0] ResultSrcE, ResultSrcM, ResultSrcW;
     logic [3:0] alucontrolE;
-    logic [31:0] instrF, instrD, instrE;
+    logic [31:0] instrF, instrPCF, instrD, instrE;
     logic stallF, stallD, stallE, stallM, flushD, flushE, flushW;
     logic [4:0] rs1D, rs2D, rs1E, rs2E, rdE, rdM, rdW;
     logic [31:0] pcF, readdataM;
@@ -58,6 +58,7 @@ module riscv_core(
         .zeroE(zeroE), .negativeE(negativeE),
         .pcF(pcF),
         .instrF(instrF),
+        .instrPCF(instrPCF),
         .aluresultM(aluresultM), .writedataM(writedataM),
         .readdataM(readdataM),
         .stallF(stallF), .stallD(stallD), .stallE(stallE), .stallM(stallM), .flushD(flushD), .flushE(flushE), .flushW(flushW),
@@ -97,6 +98,7 @@ module riscv_core(
                          // by the next fetch before D consumes the current instruction
         .hit_miss(icache_hit),
         .dout(instrF),
+        .doutaddr(instrPCF),
         .mrdaddress(i_mrdaddress),
         .mrden(i_mrden),               
         .mdin(i_mdin));
