@@ -14,6 +14,7 @@ module dcache_mem #(
     logic [WIDTH-1: 0] RAM [0: DEPTH-1];
 
     initial begin
+    for (int i = 0; i < DEPTH; i++) RAM[i] = '0;
     if (FILE != "")
         $readmemh(FILE, RAM, 32'h2000>>3);
     end

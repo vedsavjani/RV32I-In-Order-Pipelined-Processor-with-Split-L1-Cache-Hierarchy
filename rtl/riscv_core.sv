@@ -91,8 +91,10 @@ module riscv_core(
 
     i_cache ic(
         .clk(clk), .reset(reset),
-        .address(pcF),    
-        .rden(1'b1), // always reading
+        .address(pcF),
+        .rden(~stallE), // pause icache's own idle-state re-evaluation while a dcache
+                         // miss holds D, so its one-entry dout buffer isn't clobbered
+                         // by the next fetch before D consumes the current instruction
         .hit_miss(icache_hit),
         .dout(instrF),
         .mrdaddress(i_mrdaddress),

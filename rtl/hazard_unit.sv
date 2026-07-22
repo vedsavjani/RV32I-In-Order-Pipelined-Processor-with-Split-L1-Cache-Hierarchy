@@ -38,7 +38,7 @@ module hazard_unit(
 
     always_comb begin
         flushD = pcsrcE & ~(icache_stall | dcache_stall);
-        flushE = (lwstall | pcsrcE | memstall | exstall) & ~dcache_stall;
+        flushE = (lwstall | pcsrcE | memstall | exstall | icache_stall) & ~dcache_stall;
         flushW = dcache_stall;
     end
 endmodule
