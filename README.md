@@ -326,6 +326,10 @@ Memory read address is block-aligned:
 mrdaddress = {address[31:3], 3'b000};  // zero out block offset + byte offset
 ```
 
+### Backing Memory Sizing
+
+`dcache_mem` (the simulated main memory behind the D-cache) is parameterized as `DEPTH = 4096` 64-bit words → 32KB, addressed via `mrdaddress[14:3]` / `mwraddress[14:3]` (12 index bits, 2¹² = 4096). This was reduced from an earlier `DEPTH = 65536` (512KB, addressed via `[18:3]`) to cut the number of BRAMs the module infers on synthesis — the backing store is now sized to just match the cache's own 32KB data capacity rather than modeling a much larger address space.
+
 ---
 
 ## 4. Instruction Cache — Details and Implementation
@@ -366,6 +370,10 @@ The I-cache is a simplified version of the D-cache:
 | Write support | Yes | No |
 | mdout port | Yes | No |
 | mwren port | Yes | No |
+
+### Backing Memory Sizing
+
+`icache_mem` is parameterized as `DEPTH = 4096` 32-bit words → 16KB, addressed via `mrdaddress[13:2]` (12 index bits). Reduced from `DEPTH = 65536` (256KB, addressed via `[17:2]`) for the same reason as the D-cache's backing memory — fewer inferred BRAMs on synthesis.
 
 Because the instruction memory is read-only, there are no dirty bits, no write-back, and no write-allocate. On a miss, the block is simply fetched from memory and placed in the LRU way.
 
@@ -556,9 +564,10 @@ echo 'source /tools/Xilinx/Vivado/2024.2/settings64.sh' >> ~/.zshrc
 
 1. Launch Vivado: `vivado &`
 2. Create Project → RTL Project → select part `xc7a100tcsg324-1`
-3. Add Design Sources → add all `rtl/*.sv`
+3. Add Design Sources → all 19 RTL files from `rtl/` added as SystemVerilog sources
 4. Add Simulation Sources → add testbenches from `tb/`
-5. Set `top.sv` as top module for synthesis
+5. Add Constraints → `rtl/constraints.xdc`, defining a 50 MHz clock and I/O delays
+6. Set `top.sv` as top module for synthesis
 
 ### Running Behavioral Simulation in XSim
 
@@ -568,26 +577,36 @@ Note: `$readmemh` paths must be absolute or relative to the Vivado simulation wo
 
 ### Synthesis Results
 
-> Results to be updated after synthesis run completes.
+Synthesis completed successfully with 1 critical warning: `$readmemh` could not find its hex file path during synthesis. This is expected and harmless — for synthesis the memory simply initializes to zero, since `$readmemh` is only meaningful for simulation, where the hex files are loaded correctly.
+
+Implementation completed successfully with 2 warnings.
 
 Target: `xc7a100tcsg324-1` | Artix-7 100T
 
 | Resource | Used | Available | Utilization |
 |----------|------|-----------|-------------|
-| LUTs | TBD | 63,400 | TBD% |
-| Flip-Flops | TBD | 126,800 | TBD% |
-| BRAMs | TBD | 135 | TBD% |
-| DSPs | TBD | 240 | TBD% |
+| LUTs | 42,931 | 63,400 | 67.71% |
+| Flip-Flops | 25,123 | 126,800 | 19.81% |
+| BRAMs | 2 | 135 | 1.48% |
+| DSPs | 0 | 240 | 0.00% |
 
 | Timing | Value |
 |--------|-------|
-| Target clock | 50 MHz |
-| Fmax | TBD MHz |
-| WNS | TBD ns |
-| TNS | TBD ns |
+| Target clock | 50 MHz (period 20 ns) |
+| Fmax | N/A — full timing analysis requires board-level I/O constraints (XDC pin mapping) |
+| WNS | N/A (same reason) |
+| TNS | N/A |
 
-<!-- INSERT SCREENSHOT: Vivado utilization report -->
-<!-- INSERT SCREENSHOT: Vivado timing summary -->
+![Vivado project summary](schematics/vivado_project_summary.png)
+
+![Vivado utilization report](schematics/vivado_utilization_synth.png)
+
+### Notes on Utilization
+
+- **LUT usage (67.71%) is high** because cache metadata — tag arrays, valid bits, dirty bits, and LRU counters across the D-cache's 1024 sets × 4 ways and the I-cache's 2048 sets × 2 ways — is stored in flip-flops and distributed RAM (`RAMS64E` primitives) rather than BRAM. This is a direct consequence of implementing the cache arrays as flat SystemVerilog `logic` arrays, which Vivado defaults to distributed/register-based storage instead of block RAM.
+- **The 2 BRAMs** are the backing memories, `icache_mem` and `dcache_mem`, which were correctly inferred as `RAMB36E1` block RAM primitives.
+- **Planned optimization:** LUT usage could be reduced significantly (an estimated ~20%) by adding `(* ram_style = "block" *)` pragmas to the cache tag/data arrays to force BRAM inference instead of distributed logic.
+- **Full post-implementation timing** (Fmax, WNS, TNS) requires pin-level XDC constraints mapping `clk`/`reset` to the Nexys A7's physical pins. These will be added once the board is available, expected August 2026.
 
 ### FPGA Bring-Up Plan (when board is available)
 

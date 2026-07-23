@@ -1,6 +1,6 @@
 module icache_mem #(
     parameter WIDTH = 32,
-    parameter DEPTH = 65536,  // 512KB
+    parameter DEPTH = 4096,  // 16KB
     parameter FILE = ""
 )(
     input logic clk, 

@@ -1,6 +1,6 @@
 module dcache_mem #(
     parameter WIDTH = 64,
-    parameter DEPTH = 65536,  // 512KB
+    parameter DEPTH = 4096,  // 32KB
     parameter FILE = ""
 )(
     input logic clk,

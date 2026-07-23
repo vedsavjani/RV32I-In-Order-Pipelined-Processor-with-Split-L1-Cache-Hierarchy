@@ -3,3 +3,10 @@
 *.fst
 .DS_Store
 Thumbs.db
+*.jou
+*.log
+*.str
+*.backup.jou
+*.backup.log
+vivado_pid*
+rv32i_processor/
