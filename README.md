@@ -257,12 +257,7 @@ Writes on **negedge** of clock. This allows WB→ID forwarding to happen within 
 
 ### Address Breakdown
 
-```
- 31                13 12          3 2        1 0
- ┌───────────────────┬─────────────┬──────────┬──┐
- │      TAG (19b)    │  INDEX (10b) │ BLKOFF(1)│B │
- └───────────────────┴─────────────┴──────────┴──┘
-```
+*insert address breakdown diagram here*
 
 - **TAG [31:13]** — 19 bits, identifies which memory block is cached
 - **INDEX [12:3]** — 10 bits, selects which of the 1024 sets
@@ -316,8 +311,6 @@ assign mrden = (rden | wren) & ~hit_miss_ways;  // combinational — only pre-is
 
 On a hit in way `i`, increment the LRU counter of every way whose current LRU value is less than way `i`'s LRU value, then reset way `i`'s LRU to 0. This keeps a valid ranking of 0 (MRU) to 3 (LRU) across all 4 ways.
 
-**Critical bug fixed:** LRU comparison used `<` instead of `<=`, which broke cold-start behavior when all LRU counters initialize to 0.
-
 ### Write Policy
 
 - **Write-hit:** Write directly to the cached block, set dirty bit
@@ -326,15 +319,7 @@ On a hit in way `i`, increment the LRU counter of every way whose current LRU va
 
 ### Memory Interface
 
-```
-CPU side:                    Memory side:
-  address [31:0]  ──▶          mrdaddress [31:0]  ──▶
-  din     [31:0]  ──▶          mrden               ──▶
-  rden            ──▶          mdin    [63:0]      ◀──
-  wren            ──▶          mdout   [63:0]       ──▶
-  dout    [31:0]  ◀──          mwraddress [31:0]   ──▶
-  hit_miss        ◀──          mwren               ──▶
-```
+*insert memory interface diagram here*
 
 Memory read address is block-aligned:
 ```systemverilog
@@ -360,12 +345,7 @@ mrdaddress = {address[31:3], 3'b000};  // zero out block offset + byte offset
 
 ### Address Breakdown
 
-```
- 31                13 12         2 1        0
- ┌───────────────────┬────────────┬──────────┐
- │      TAG (19b)    │ INDEX (11b)│ BYTE (2) │
- └───────────────────┴────────────┴──────────┘
-```
+*insert address breakdown diagram here*
 
 - **TAG [31:13]** — 19 bits
 - **INDEX [12:2]** — 11 bits, selects which of the 2048 sets (2¹¹ = 2048, matches the spec above)
@@ -393,14 +373,7 @@ Because the instruction memory is read-only, there are no dirty bits, no write-b
 
 When the I-cache misses, the instruction isn't ready yet. The pipeline must freeze the fetch and decode stages until the cache returns the correct instruction.
 
-```
-Cycle N:   IF=I5(miss)  ID=I4   EX=I3   MEM=I2   WB=I1
-Cycle N+1: IF=I5(miss)  ID=I4*  EX=bubble MEM=I3  WB=I2
-Cycle N+2: IF=I5(miss)  ID=I4*  EX=bubble MEM=-    WB=I3
-Cycle N+3: IF=I5(hit)   ID=I4*  EX=bubble MEM=-    WB=-
-Cycle N+4: IF=I6        ID=I5   EX=I4    MEM=-    WB=-
-```
-*frozen in place
+*insert cycle-by-cycle stall diagram here*
 
 **Critical implementation detail:** The stall signal must be driven by `~i_mrden` (combinational), not by a registered version of `icache_hit`. Using a registered signal caused the PC to advance one cycle before the stall took effect, fetching the wrong instruction.
 
@@ -426,9 +399,20 @@ Cycle N+4: IF=I6        ID=I5   EX=I4    MEM=-    WB=-
 ### How to Run
 
 **Prerequisites:**
+
+Linux (Debian/Ubuntu):
 ```bash
 sudo apt install iverilog gtkwave
 ```
+
+macOS (Homebrew):
+```bash
+brew install icarus-verilog gtkwave
+```
+(if `gtkwave` isn't found as a formula, use `brew install --cask gtkwave` instead)
+
+Windows:
+Easiest path is [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) — install a Linux distro through it and follow the Linux steps above. If you'd rather not use WSL, native Windows builds of [Icarus Verilog](https://bleyer.org/icarus/) and [GTKWave](https://gtkwave.sourceforge.net/) are also available, but the commands in this README assume a Unix-style shell (bash), so paths/flags may need adjusting.
 
 **Step 1 — point `top.sv` at the program you want to run.**
 `top.sv` loads both caches' backing memory at elaboration time via the `FILE` parameter on `icache_mem`/`dcache_mem` — there's no runtime program loader, so this has to be edited per test:
