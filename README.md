@@ -2,8 +2,17 @@
 
 A fully functional 5-stage pipelined RISC-V processor implementing the complete RV32I instruction set, integrated with a split L1 instruction and data cache system. Designed, implemented, and verified entirely in SystemVerilog — simulated in iverilog and synthesized in Vivado targeting the Nexys A7 FPGA.
 
-**Author:** Ved Savjani | `Ved.Savjani@iiitb.ac.in` | BTech ECE, IIIT Bangalore
-**Tools:** iverilog/vvp · GTKWave · Vivado 2024.2 · RARS · Godbolt
+**Author**
+Ved Savjani
+`Ved.Savjani@iiitb.ac.in`
+BTech ECE, IIIT Bangalore
+
+**Tools**
+- iverilog / vvp (compiling and running the SystemVerilog simulations)
+- GTKWave (viewing waveform dumps for debugging)
+- Vivado 2024.2 (FPGA synthesis, targeting the Nexys A7)
+- RARS (assembling/verifying test programs and dumping instruction/data hex)
+- Godbolt (compiling C to RISC-V assembly, used for quicksort)
 
 > 🚧 **Work in progress:** Vivado synthesis results (Section 7) and the hand-drawn datapath/FSM schematics (Sections 2–4) are still pending — see inline placeholders.
 
@@ -105,7 +114,7 @@ All other standard RISC-V instructions are pseudo-instructions derived from thes
 | Instruction cache | 16KB, 2-way, 1-word block, LRU |
 | Data cache | 32KB, 4-way, 2-word block, write-back, write-allocate, LRU |
 | Miss penalty | 3 cycles (both caches) |
-| Memory interface | Word-addressed, 1-cycle latency |
+| Memory interface | Word-addressed |
 
 ---
 
@@ -115,23 +124,16 @@ All other standard RISC-V instructions are pseudo-instructions derived from thes
 
 The processor implements the standard 5-stage RISC-V pipeline:
 
-```
-┌────┐     ┌────┐     ┌────┐     ┌─────┐     ┌────┐
-│ IF │────▶│ ID │────▶│ EX │────▶│ MEM │────▶│ WB │
-└────┘     └────┘     └────┘     └─────┘     └────┘
-  │                     │                       │
-  │    i-cache miss      │    d-cache miss       │
-  │    stall F,D         │    stall F,D,E,M      │
-  │    flush E           │    flush W            │
-```
-
 - **IF** — Fetch instruction from I-cache using PC
 - **ID** — Decode instruction, read register file, extend immediate
 - **EX** — ALU operation, branch resolution, forwarding
 - **MEM** — D-cache access for loads and stores
 - **WB** — Write result back to register file
 
-<!-- INSERT HAND-DRAWN SCHEMATIC: Full datapath schematic showing all pipeline registers (IF/ID, ID/EX, EX/MEM, MEM/WB), all muxes, forwarding paths (EX→EX, MEM→EX), ALU, regfile, extend unit, PC logic with pcsrc mux -->
+
+*insert the processor schematics here*
+
+
 
 ### Pipeline Registers
 
