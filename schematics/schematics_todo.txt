@@ -1,0 +1,63 @@
+Schematics to hand-draw for README.md
+======================================
+
+1. Top-level system block diagram (Section 1 - System Overview)
+   - CPU core -> I-cache -> icache_mem
+   - CPU core -> D-cache -> dcache_mem
+   - show address/data flow direction with arrows
+
+2. Top module view (Section 2 - Pipeline Stages)
+   - top.sv: riscv_core + icache_mem + dcache_mem
+   - show the d_mrdaddress/d_mwraddress/d_mrden/d_mwren/d_mdout/d_mdin
+     and i_mrdaddress/i_mrden/i_mdin connections between riscv_core and the two memories
+
+3. riscv_core internal view (Section 2 - Pipeline Stages)
+   - controller, datapath, hazard_unit, i_cache, d_cache blocks and how they connect
+   - full 5-stage datapath: pipeline registers (IF/ID, ID/EX, EX/MEM, MEM/WB),
+     muxes, forwarding paths (EX/MEM -> EX, MEM/WB -> EX), ALU, regfile,
+     extend unit, PC logic with pcsrc mux
+
+4. Hazard unit block diagram (Section 2 - Hazard Unit)
+   - inputs: rs1D, rs2D, rdE, rdM, rdW, ResultSrcE, ResultSrcM, RegWriteE, RegWriteM,
+     RegWriteW, pcsrcE, icache_hit, dcache_hit
+   - outputs: stallF, stallD, stallE, stallM, flushD, flushE, flushW, forwardAE, forwardBE
+
+5. D-cache internal structure (Section 3 - Internal Storage)
+   - 1024 sets x 4 ways
+   - each way: valid bit, dirty bit, 2-bit LRU counter, 19-bit tag, 64-bit data (2 words)
+
+6. D-cache FSM diagram (Section 3 - Cache FSM)
+   - 2-state FSM: IDLE and MISS
+   - transition conditions + what happens in each state
+
+7. I-cache internal structure (Section 4 - Address Breakdown area)
+   - 2048 sets x 2 ways
+   - each way: valid bit, 1-bit LRU, 19-bit tag, 32-bit data
+
+8. I-cache FSM diagram (Section 4 - Stall Behavior in Pipeline)
+   - 2-state FSM: IDLE -> MISS -> IDLE
+   - transition conditions
+
+
+10. I-cache address breakdown diagram (Section 4 - Address Breakdown)
+    - 32-bit address split: TAG [31:13] (19b), INDEX [12:2] (11b),
+      BYTE OFFSET [1:0] (2b)
+    - old ASCII version was wrong/misaligned, redrawing by hand instead
+
+11. D-cache memory interface diagram (Section 3 - Memory Interface)
+    - CPU side: address[31:0], din[31:0], rden, wren, dout[31:0], hit_miss
+    - memory side: mrdaddress[31:0], mrden, mdin[63:0], mdout[63:0],
+      mwraddress[31:0], mwren
+    - show which signals are CPU->cache vs cache->memory vs memory->cache
+
+12. I-cache stall cycle-by-cycle diagram (Section 4 - Stall Behavior in Pipeline)
+    - shows what happens on an icache miss across 5 cycles (N to N+4):
+      IF frozen on the missed instruction while it's a miss, ID frozen
+      (bubble in EX), pipeline resumes once IF gets a hit
+    - old text version (Cycle N / N+1 / N+2 / N+3 / N+4 table) removed from README
+
+Not on this list (screenshots, not hand-drawn):
+- H&H test terminal output passing (Section 6)
+- Quicksort terminal output result (Section 6)
+- Vivado utilization report (Section 7)
+- Vivado timing summary (Section 7)
