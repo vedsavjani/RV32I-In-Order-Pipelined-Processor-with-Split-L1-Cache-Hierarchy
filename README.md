@@ -257,7 +257,7 @@ Writes on **negedge** of clock. This allows WB→ID forwarding to happen within 
 
 ### Address Breakdown
 
-*insert address breakdown diagram here*
+![D-cache address breakdown](schematics/dcache_address_breakdown.png)
 
 - **TAG [31:13]** — 19 bits, identifies which memory block is cached
 - **INDEX [12:3]** — 10 bits, selects which of the 1024 sets
