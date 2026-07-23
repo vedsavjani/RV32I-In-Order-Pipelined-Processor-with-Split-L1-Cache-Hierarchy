@@ -264,7 +264,7 @@ Writes on **negedge** of clock. This allows WB→ID forwarding to happen within 
 - **BLOCK OFFSET [2]** — 1 bit, selects word 0 or word 1 within the 2-word block
 - **BYTE OFFSET [1:0]** — 2 bits, word-aligned (ignored for word accesses)
 
-<!-- INSERT DIAGRAM (Claude Design): D-cache internal structure showing 1024 sets × 4 ways, each way containing valid bit, dirty bit, 2-bit LRU counter, 19-bit tag, and 64-bit data (two 32-bit words) -->
+![D-cache internal structure](schematics/dcache_internal_struct.png)
 
 ### Internal Storage
 
@@ -319,7 +319,7 @@ On a hit in way `i`, increment the LRU counter of every way whose current LRU va
 
 ### Memory Interface
 
-*insert memory interface diagram here*
+![D-cache memory interface](schematics/dcache_mem_interface.png)
 
 Memory read address is block-aligned:
 ```systemverilog
@@ -345,13 +345,13 @@ mrdaddress = {address[31:3], 3'b000};  // zero out block offset + byte offset
 
 ### Address Breakdown
 
-*insert address breakdown diagram here*
+![I-cache address breakdown](schematics/icache_address_breakdown.png)
 
 - **TAG [31:13]** — 19 bits
 - **INDEX [12:2]** — 11 bits, selects which of the 2048 sets (2¹¹ = 2048, matches the spec above)
 - **BYTE OFFSET [1:0]** — 2 bits, word-aligned (ignored — block size is 1 word)
 
-<!-- INSERT DIAGRAM (Claude Design): I-cache internal structure showing 2048 sets × 2 ways, each way containing valid bit, 1-bit LRU, 19-bit tag, and 32-bit data -->
+![I-cache internal structure](schematics/icache_internal_struct.png)
 
 ### Differences from D-Cache
 
@@ -373,7 +373,13 @@ Because the instruction memory is read-only, there are no dirty bits, no write-b
 
 When the I-cache misses, the instruction isn't ready yet. The pipeline must freeze the fetch and decode stages until the cache returns the correct instruction.
 
-*insert cycle-by-cycle stall diagram here*
+| Cycle | IF | ID | EX | MEM | WB |
+|---|---|---|---|---|---|
+| N | I5 (miss) | I4 | I3 | I2 | I1 |
+| N+1 | I5 (miss) | I4 (frozen) | bubble | I3 | I2 |
+| N+2 | I5 (miss) | I4 (frozen) | bubble | - | I3 |
+| N+3 | I5 (hit) | I4 (frozen) | bubble | - | - |
+| N+4 | I6 | I5 | I4 | - | - |
 
 **Critical implementation detail:** The stall signal must be driven by `~i_mrden` (combinational), not by a registered version of `icache_hit`. Using a registered signal caused the PC to advance one cycle before the stall took effect, fetching the wrong instruction.
 
