@@ -281,7 +281,13 @@ logic [MWIDTH-1:0] mem0 [0:NSETS-1];  // 64-bit (2-word block)
 
 ### Cache FSM
 
-<!-- INSERT HAND-DRAWN SCHEMATIC: 2-state FSM diagram with IDLE and MISS states, showing transition conditions and actions in each state -->
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE : reset
+    IDLE --> IDLE : no request (~rden & ~wren)\nor cache hit (way0..way3)
+    IDLE --> MISS : request (rden | wren) and miss in all 4 ways
+    MISS --> IDLE : unconditional, after 1 cycle
+```
 
 **IDLE state:**
 - Compare incoming address tag against all 4 ways at the indexed set
@@ -391,7 +397,13 @@ When the I-cache misses, the instruction isn't ready yet. The pipeline must free
 
 **Critical implementation detail:** The stall signal must be driven by `~i_mrden` (combinational), not by a registered version of `icache_hit`. Using a registered signal caused the PC to advance one cycle before the stall took effect, fetching the wrong instruction.
 
-<!-- INSERT HAND-DRAWN SCHEMATIC: I-cache FSM state diagram (IDLE → MISS → IDLE) with transition conditions -->
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE : reset
+    IDLE --> IDLE : no request (~rden)\nor cache hit (way0 or way1)
+    IDLE --> MISS : rden and miss in both ways
+    MISS --> IDLE : unconditional, after 1 cycle
+```
 
 ---
 
