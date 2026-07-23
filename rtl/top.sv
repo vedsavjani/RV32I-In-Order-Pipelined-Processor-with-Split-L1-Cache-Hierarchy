@@ -19,16 +19,16 @@ module top(
 
     dcache_mem #(.FILE("")) dcm(
     .clk(clk),
-    .mrdaddress(d_mrdaddress[18:3]),
-    .mwraddress(d_mwraddress[18:3]),
+    .mrdaddress(d_mrdaddress[14:3]),
+    .mwraddress(d_mwraddress[14:3]),
     .mrden(d_mrden),
     .mwren(d_mwren),
     .d(d_mdout),
     .q(d_mdin));
 
-    icache_mem #(.FILE("mem/hh_test.txt")) icm(
+    icache_mem #(.FILE("mem/test1.txt")) icm(
     .clk(clk), 
-    .mrdaddress(i_mrdaddress[17:2]),
+    .mrdaddress(i_mrdaddress[13:2]),
     .mrden(i_mrden),
     .q(i_mdin));     
 endmodule

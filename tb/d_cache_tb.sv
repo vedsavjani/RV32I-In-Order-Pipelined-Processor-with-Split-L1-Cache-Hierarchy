@@ -32,8 +32,8 @@ module d_cache_tb();
 
     dcache_mem dut_mem (
         .clk(clk),
-        .mrdaddress(mrdaddress[18:3]),
-        .mwraddress(mwraddress[18:3]),
+        .mrdaddress(mrdaddress[14:3]),
+        .mwraddress(mwraddress[14:3]),
         .mrden(mrden),
         .mwren(mwren),
         .d(mdout),

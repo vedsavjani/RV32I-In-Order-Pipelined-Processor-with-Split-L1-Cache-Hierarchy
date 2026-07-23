@@ -27,7 +27,7 @@ module i_cache_tb();
 
     icache_mem dut_mem (
         .clk(clk),
-        .mrdaddress(mrdaddress[17:2]),
+        .mrdaddress(mrdaddress[13:2]),
         .mrden(mrden),
         .q(mdin));
 
