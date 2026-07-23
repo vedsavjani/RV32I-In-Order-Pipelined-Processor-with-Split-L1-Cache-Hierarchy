@@ -510,28 +510,19 @@ Four bugs actually held things up during pipeline + cache integration — mostly
 
 ## 6. Testing with Real-World Programs
 
-### Harris & Harris Test Program — ✅ PASS
-
-The standard verification suite from Harris & Harris RISC-V Edition. Tests a broad range of instructions including arithmetic, logic, loads, stores, branches, and jumps.
-
-**Result:** All instructions produce correct register and memory values.
-
-<!-- INSERT SCREENSHOT: Terminal output showing H&H test passing -->
-
 ### Quicksort (10 elements) — ✅ PASS
 
-Sorts the array `[90, 45, 78, 33, 12, 64, 22, 11, 5, 25]` using recursive quicksort implemented in C, compiled to RISC-V assembly.
+Once the micro-tests and the Harris & Harris test program were both passing, it was time to run something bigger and less forgiving — quicksort. Sorting `[90, 45, 78, 33, 12, 64, 22, 11, 5, 25]` recursively pulls in a lot that the earlier tests didn't exercise: real function calls (`jal`/`jalr`), stack-pointer-based memory access, array addressing through computed offsets, heavy branching inside the partition loop, and repeated D-cache hits on the same array data.
 
-This program exercises:
-- Recursive function calls (`jal`, `jalr`)
-- Stack manipulation (`sw`/`lw` to stack pointer)
-- Array indexing with computed addresses
-- Heavy branch usage inside partition loop
-- Repeated D-cache hits on array data (spatial and temporal locality)
+Running it surfaced a data-loading issue: the initial array was landing in the wrong memory words, because the D-cache's backing memory is addressed in 64-bit words while RARS dumps hex in 32-bit words — every other array element was coming back as zero. Once the offset used to load that data was corrected, quicksort sorted the array correctly.
 
 **Result:** Output array `[5, 11, 12, 22, 25, 33, 45, 64, 78, 90]` verified in D-cache memory.
 
 <!-- INSERT SCREENSHOT: Terminal output showing quicksort result -->
+
+### Dijkstra's Algorithm — 🚧 In Progress
+
+After quicksort was working, the next step was trying Dijkstra's shortest-path algorithm on the same setup. It isn't working yet — there's a bug somewhere in how it runs on the hardware that's still being tracked down. Not claiming this one as verified until it's actually fixed and passing.
 
 ---
 
