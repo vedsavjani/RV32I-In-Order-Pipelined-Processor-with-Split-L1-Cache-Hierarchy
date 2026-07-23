@@ -412,7 +412,7 @@ brew install icarus-verilog gtkwave
 (if `gtkwave` isn't found as a formula, use `brew install --cask gtkwave` instead)
 
 Windows:
-Easiest path is [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) — install a Linux distro through it and follow the Linux steps above. If you'd rather not use WSL, native Windows builds of [Icarus Verilog](https://bleyer.org/icarus/) and [GTKWave](https://gtkwave.sourceforge.net/) are also available, but the commands in this README assume a Unix-style shell (bash), so paths/flags may need adjusting.
+Easiest path is [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) — install a Linux distro through it and follow the Linux steps above. If you'd rather not use WSL, native Windows builds of [Icarus Verilog](https://bleyer.org/icarus/) and [GTKWave](https://gtkwave.sourceforge.net/) are also available, but the commands in this README assume a Unix-style shell (bash/zsh), so paths/flags may need adjusting.
 
 **Step 1 — point `top.sv` at the program you want to run.**
 `top.sv` loads both caches' backing memory at elaboration time via the `FILE` parameter on `icache_mem`/`dcache_mem` — there's no runtime program loader, so this has to be edited per test:
@@ -496,35 +496,19 @@ Before integrating with the pipeline, both caches were verified independently wi
 
 ### Key Bugs Found During Integration Testing
 
-**Bug 1: PC advancing before stall asserted**
-- Symptom: First instruction after cold-start icache miss fetched wrong instruction
-- Cause: `icache_stall` was derived from registered `hit_miss`, so stall arrived one cycle late
-- Fix: Drive `icache_stall = ~i_mrden` (combinational — goes high the same cycle the miss is detected)
+Six bugs actually held things up during pipeline + cache integration — mostly one-cycle timing mismatches that only surfaced once the cache FSMs and the hazard unit started talking to each other. Found mostly by staring at `$display` traces and diffing waveforms in GTKWave until something looked off.
 
-**Bug 2: D-cache stalling on every cycle**
-- Symptom: Pipeline permanently stalled even with no memory operation in flight
-- Cause: `dcache_stall = ~dcache_hit` fired even when there was no load/store in MEM stage
-- Fix: Gate with `mem_active`: `dcache_stall = ~dcache_hit & (rden | MemWriteM)`
+**1. PC moved on before the stall actually kicked in.** The first instruction fetched right after a cold-start icache miss came out wrong. `icache_stall` was derived from a *registered* `hit_miss`, so the stall arrived one cycle later than it needed to — by then the PC had already advanced. Fix was driving it straight off `~i_mrden` instead, which is combinational and goes high the same cycle the miss is detected.
 
-**Bug 3: D-cache stall releasing one cycle early**
-- Symptom: `dout` not yet valid when pipeline unstalled, wrong value written to register
-- Cause: Stall released when `hit_miss` went high, but `dout` was registered and arrived next cycle
-- Fix: Register `hit_miss` gated with `mem_active`: stall releases only after `dout` is valid
+**2. D-cache stalled on every single cycle**, even with nothing happening in MEM. `dcache_stall = ~dcache_hit` doesn't check whether there's an actual load/store in flight, so with no memory op active it just sat there stalling forever. Gated it with `mem_active`: `dcache_stall = ~dcache_hit & (rden | MemWriteM)`.
 
-**Bug 4: dcache_mem $readmemh offset wrong**
-- Symptom: Quicksort data corrupted — every other array element was zero
-- Cause: `$readmemh` loaded data at word offset `32'h2000>>2` (4-byte words), but dcache_mem is indexed by 64-bit words
-- Fix: Use `32'h2000>>3` — 8-byte word addressing
+**3. Close cousin of #2** — the stall was releasing one cycle too early this time. `hit_miss` would go high, the pipeline would unstall, but `dout` is a registered output and hadn't actually landed yet — so the wrong value got written into a register. Registering `hit_miss` (gated with `mem_active`) fixed it: the stall now only releases once `dout` is genuinely valid.
 
-**Bug 5: False load-use stall on `lui`**
-- Symptom: Pipeline stalled unnecessarily after `lui`
-- Cause: Hazard unit checked `ResultSrcE[0]` to detect loads, but `lui` also sets `ResultSrcE[0]`
-- Fix: Check full `ResultSrcE == 3'b001` (only true for `lw`)
+**4. Quicksort's array kept coming back corrupted** — every other element read as zero. Turned out to be a `$readmemh` offset issue: it was loading data at word offset `32'h2000>>2` (treating memory as 4-byte words), but `dcache_mem` is indexed by 64-bit words. Switching to `32'h2000>>3` fixed it.
 
-**Bug 6: Branch using wrong `funct3` (caught earlier, during pipeline-only phase)**
-- Symptom: All loops with `bne`/`blt`/`bge` executed wrong branch direction
-- Cause: `branchtakenE` used `funct3` from the decode stage instead of `funct3E` (EX stage)
-- Fix: Use `funct3E` everywhere branch condition is evaluated
+**5. `lui` was triggering a load-use stall it had no business triggering.** The hazard unit was checking `ResultSrcE[0]` to detect loads, but `lui` happens to set that same bit. Fix was checking the full `ResultSrcE == 3'b001`, which is only true for `lw`.
+
+**6. Caught way earlier, before the caches were even in the picture** — every branch (`bne`/`blt`/`bge`) went the wrong direction inside loops. `branchtakenE` was reading `funct3` from the decode stage instead of `funct3E` from EX, so the condition being evaluated was one instruction stale. Fixed by using the EX-stage signal everywhere the branch condition is checked.
 
 ---
 
