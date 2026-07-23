@@ -5,6 +5,8 @@ A fully functional 5-stage pipelined RISC-V processor implementing the complete 
 **Author:** Ved Savjani | `Ved.Savjani@iiitb.ac.in` | BTech ECE, IIIT Bangalore
 **Tools:** iverilog/vvp · GTKWave · Vivado 2024.2 · RARS · Godbolt
 
+> 🚧 **Work in progress:** Vivado synthesis results (Section 7) and the hand-drawn datapath/FSM schematics (Sections 2–4) are still pending — see inline placeholders.
+
 ---
 
 ## Table of Contents
@@ -62,8 +64,6 @@ This project implements a complete RISC-V SoC subsystem: a 5-stage in-order pipe
 │   ├── test4c_tb.sv        # Dirty writeback
 │   ├── hh_tb.sv            # Harris & Harris test program
 │   ├── quicksort_tb.sv     # 10-element quicksort
-│   ├── dijkstras3_tb.sv    # Dijkstra 3-node
-│   ├── dijkstras10_tb.sv   # Dijkstra 10-node
 │   ├── d_cache_tb.sv       # D-cache isolation testbench
 │   └── i_cache_tb.sv       # I-cache isolation testbench
 │
@@ -71,11 +71,11 @@ This project implements a complete RISC-V SoC subsystem: a 5-stage in-order pipe
     ├── hh_test.txt             # H&H test program hex
     ├── quicksort.txt           # Quicksort instruction hex
     ├── quicksort_data.txt      # Quicksort initial array data
-    ├── dijkstras10.txt         # Dijkstra instruction hex
-    ├── dijkstras10_data.txt    # Dijkstra graph data
     ├── test1.txt ... test4c.txt
     └── test2_data.txt, test3b_data.txt
 ```
+
+Note: each program has a matching `mem/*.asm` (human-readable RISC-V source) alongside the hex dump loaded via `$readmemh`.
 
 ### RV32I Instructions Supported
 
@@ -147,7 +147,7 @@ end
 
 ### Hazard Unit
 
-The hazard unit handles three categories of hazards:
+The hazard unit handles five categories of hazards:
 
 <!-- INSERT HAND-DRAWN SCHEMATIC: Hazard unit block showing all inputs (rs1D, rs2D, rdE, rdM, ResultSrcE, ResultSrcM, RegWriteE, RegWriteM, pcsrcE, icache_hit, dcache_hit, mem_active) and all outputs (stallF, stallD, stallE, stallM, flushD, flushE, flushW, forwardAE, forwardBE) -->
 
@@ -178,7 +178,16 @@ memstall = (ResultSrcM != 3'b000) & RegWriteM &
            ((rs1E == rdM & rs1E != 5'b0) | (rs2E == rdM & rs2E != 5'b0));
 ```
 
-**4. Cache Stalls**
+**4. EX-Stage Result Stall (ALU / jal / lui / auipc)**
+
+Same problem as `memstall`, one pipeline stage earlier. When the EX-stage instruction writes a non-load result (a plain ALU op, `jal`, `lui`, or `auipc`) and the instruction behind it in ID needs that register, forwarding can't help *yet* — the value only becomes forward-able once the producer reaches MEM (via `forwardAE`/`forwardBE` = `2'b10`) or WB. So the consumer is stalled one cycle in ID, and by the time it reaches EX next cycle, the MEM-stage forward covers it correctly.
+
+```systemverilog
+exstall = (ResultSrcE != 3'b001) & RegWriteE &
+          ((rs1D == rdE & rs1D != 5'b0) | (rs2D == rdE & rs2D != 5'b0));
+```
+
+**5. Cache Stalls**
 
 ```systemverilog
 icache_stall = ~icache_hit;
@@ -189,14 +198,12 @@ stallD = lwstall | memstall | exstall | icache_stall | dcache_stall;
 stallE = dcache_stall;
 stallM = dcache_stall;
 
-flushD = pcsrcE & ~(icache_stall | dcache_stall);
+flushD = pcsrcE;
 flushE = (lwstall | pcsrcE | memstall | exstall | icache_stall) & ~dcache_stall;
 flushW = dcache_stall;
 ```
 
 **Why flushE is blocked during dcache stall:** During a D-cache stall, the instruction in EX is valid and frozen in place. If flushE fires, that instruction is lost permanently. The rule: never flush EX during a D-cache stall.
-
-**Why flushD is blocked during cache stalls:** If a branch resolves while a cache stall is active, the instruction in ID is a bubble — flushing it would be a no-op but could cause incorrect behavior. Gate with `~(icache_stall | dcache_stall)`.
 
 ### Control Unit
 
@@ -297,8 +304,10 @@ wire hit0 = valid0[index] & (tag0[index] == address[`D_TAG]);
 wire hit1 = valid1[index] & (tag1[index] == address[`D_TAG]);
 wire hit2 = valid2[index] & (tag2[index] == address[`D_TAG]);
 wire hit3 = valid3[index] & (tag3[index] == address[`D_TAG]);
-assign hit_miss = hit0 | hit1 | hit2 | hit3;
-assign mrden = ~hit_miss;  // combinational — pre-issues memory request on miss
+wire hit_miss_ways = hit0 | hit1 | hit2 | hit3;
+assign mrden = (rden | wren) & ~hit_miss_ways;  // combinational — only pre-issues a memory
+                                                 // request when the CPU is actually asking for
+                                                 // a read/write and none of the ways hit
 ```
 
 ### LRU Update
@@ -350,15 +359,15 @@ mrdaddress = {address[31:3], 3'b000};  // zero out block offset + byte offset
 ### Address Breakdown
 
 ```
- 31                13 12           1 0
- ┌───────────────────┬──────────────┬─┐
- │      TAG (19b)    │  INDEX (12b)  │B│
- └───────────────────┴──────────────┴─┘
+ 31                13 12         2 1        0
+ ┌───────────────────┬────────────┬──────────┐
+ │      TAG (19b)    │ INDEX (11b)│ BYTE (2) │
+ └───────────────────┴────────────┴──────────┘
 ```
 
 - **TAG [31:13]** — 19 bits
-- **INDEX [12:1]** — 12 bits, selects which of the 2048 sets
-- **BYTE OFFSET [0]** — 1 bit, ignored (word-aligned)
+- **INDEX [12:2]** — 11 bits, selects which of the 2048 sets (2¹¹ = 2048, matches the spec above)
+- **BYTE OFFSET [1:0]** — 2 bits, word-aligned (ignored — block size is 1 word)
 
 <!-- INSERT DIAGRAM (Claude Design): I-cache internal structure showing 2048 sets × 2 ways, each way containing valid bit, 1-bit LRU, 19-bit tag, and 32-bit data -->
 
@@ -401,13 +410,16 @@ Cycle N+4: IF=I6        ID=I5   EX=I4    MEM=-    WB=-
 
 ### Testing Methodology
 
-The testing workflow for every program:
-1. Write C code (bare-metal, no stdlib)
-2. Compile via Godbolt (RISC-V 32-bit gcc 14.2.0, `-O0`)
-3. Adapt for RARS (replace `call` with `jal ra, label`, `jr ra` with `jalr x0, ra, 0`)
-4. Verify correctness in RARS (Compact memory config: text at `0x0`, data at `0x2000`)
-5. Dump hex from RARS → load into `icache_mem`/`dcache_mem` via `$readmemh`
-6. Run SystemVerilog testbench in iverilog, check register/memory values
+**Program origin** — where each test's assembly actually came from:
+- **Micro-tests (`test1`–`test4c`)** — small RISC-V assembly sequences hand-crafted (with Claude's help) to isolate one specific hazard/cache scenario each (e.g. load-use hazard overlapping an icache miss, LRU eviction, dirty writeback).
+- **`hh_test`** — the instruction sequence from Harris & Harris, *Digital Design and Computer Architecture: RISC-V Edition*, adapted (with Claude's help) so it assembles cleanly in RARS.
+- **`quicksort`** — C source for a 10-element recursive quicksort (Claude-generated), compiled to RISC-V assembly via [Godbolt](https://godbolt.org/) targeting RISC-V (32-bit) gcc 14.2.0, then hand-adjusted (with Claude's help) for RARS compatibility (e.g. swapping compiler-emitted `call`/`ret` pseudo-ops for the `jal ra, label` / `jalr x0, ra, 0` forms RARS expects).
+
+**Common pipeline from there, for every program:**
+1. Assemble and single-step in RARS to confirm correctness first (Compact memory config: text at `0x0`, data at `0x2000`).
+2. Dump machine code to hex: RARS → **File → Dump Memory**, select the **Text** segment (and **Data** segment, for programs that need preloaded data) → format **Hexadecimal** → choose the output `.txt` file.
+3. Point `top.sv`'s `icache_mem`/`dcache_mem` `FILE` parameters at the dumped `.txt` file(s) — see [How to Run](#how-to-run) below.
+4. Run the matching SystemVerilog testbench (also written with Claude's help) in iverilog — it self-checks the final register/memory contents against expected values and prints PASS/FAIL.
 
 ### How to Run
 
@@ -416,7 +428,17 @@ The testing workflow for every program:
 sudo apt install iverilog gtkwave
 ```
 
-**Running any test:**
+**Step 1 — point `top.sv` at the program you want to run.**
+`top.sv` loads both caches' backing memory at elaboration time via the `FILE` parameter on `icache_mem`/`dcache_mem` — there's no runtime program loader, so this has to be edited per test:
+
+```systemverilog
+icache_mem #(.FILE("mem/hh_test.txt")) icm( ... );   // instructions — always set
+dcache_mem #(.FILE(""))                dcm( ... );   // initial data — only if the program needs preloaded data
+```
+
+Set the instruction `FILE` to the `.txt` matching the test (e.g. `mem/test2.txt`, `mem/quicksort.txt`). Only set the data `FILE` for programs that actually need initial data preloaded into the D-cache — currently `test2` (`mem/test2_data.txt`), `test3b` (`mem/test3b_data.txt`), and `quicksort` (`mem/quicksort_data.txt`). Everything else (`test1`, `test3a`, `test3c`, `test4a`–`test4c`, `hh_test`) builds up its own data through `sw` instructions at runtime, so leave the data `FILE` as `""`.
+
+**Step 2 — compile and run:**
 ```bash
 cd tb
 iverilog -g2012 -o sim.vvp \
@@ -428,11 +450,19 @@ iverilog -g2012 -o sim.vvp \
   ../rtl/regfile.sv ../rtl/alu.sv ../rtl/adder.sv \
   ../rtl/muxes.sv ../rtl/extend.sv \
   ../rtl/maindec.sv ../rtl/aludec.sv \
-  test1_tb.sv   # replace with any testbench
+  test1_tb.sv   # replace with the testbench matching whatever you set FILE to above
 vvp sim.vvp
 ```
 
-**Running cache isolation tests:**
+**Step 3 — check the result.** Each testbench self-checks: it waits for the program to finish, compares the relevant registers/memory locations against the expected values, and prints a verdict before `$stop`, e.g.:
+```
+--- register check ---
+x1=1 x2=2 x3=3 x4=4
+Step 1 PASSED
+```
+Every testbench also writes a `dump.vcd` waveform (`gtkwave dump.vcd`) if you want to step through signal-level behavior instead of just the pass/fail line.
+
+**Running cache isolation tests** (drive the cache directly, no CPU/top.sv involved):
 ```bash
 # D-cache
 iverilog -g2012 -o sim.vvp ../rtl/d_cache.sv ../rtl/dcache_mem.sv d_cache_tb.sv
@@ -506,7 +536,7 @@ Before integrating with the pipeline, both caches were verified independently wi
 - Fix: Register `hit_miss` gated with `mem_active`: stall releases only after `dout` is valid
 
 **Bug 4: dcache_mem $readmemh offset wrong**
-- Symptom: Quicksort and Dijkstra data corrupted — every other array element was zero
+- Symptom: Quicksort data corrupted — every other array element was zero
 - Cause: `$readmemh` loaded data at word offset `32'h2000>>2` (4-byte words), but dcache_mem is indexed by 64-bit words
 - Fix: Use `32'h2000>>3` — 8-byte word addressing
 
@@ -524,15 +554,15 @@ Before integrating with the pipeline, both caches were verified independently wi
 
 ## 6. Testing with Real-World Programs
 
-### Harris & Harris Test Program
+### Harris & Harris Test Program — ✅ PASS
 
 The standard verification suite from Harris & Harris RISC-V Edition. Tests a broad range of instructions including arithmetic, logic, loads, stores, branches, and jumps.
 
-**Result: PASS** — All instructions produce correct register and memory values.
+**Result:** All instructions produce correct register and memory values.
 
 <!-- INSERT SCREENSHOT: Terminal output showing H&H test passing -->
 
-### Quicksort (10 elements)
+### Quicksort (10 elements) — ✅ PASS
 
 Sorts the array `[90, 45, 78, 33, 12, 64, 22, 11, 5, 25]` using recursive quicksort implemented in C, compiled to RISC-V assembly.
 
@@ -543,19 +573,9 @@ This program exercises:
 - Heavy branch usage inside partition loop
 - Repeated D-cache hits on array data (spatial and temporal locality)
 
-**Result: PASS** — Output array `[5, 11, 12, 22, 25, 33, 45, 64, 78, 90]` verified in D-cache memory.
+**Result:** Output array `[5, 11, 12, 22, 25, 33, 45, 64, 78, 90]` verified in D-cache memory.
 
 <!-- INSERT SCREENSHOT: Terminal output showing quicksort result -->
-
-### Dijkstra's Algorithm
-
-Finds shortest paths from node 0 in a weighted directed graph. Tests the same features as quicksort but with more complex control flow and nested loops.
-
-**3-node result: FAIL** — `dist[1]` and `dist[2]` return 0 instead of correct distances.
-
-**Known bug:** When a `jal`/branch fires at the exact same cycle as an icache stall, the PC is frozen and cannot accept the branch redirect. The jump target is computed in EX but the PC can't update because `stallF` is also asserted. The JAL in EX gets flushed the next cycle, so the jump is lost and execution falls through sequentially. Dijkstra uses heavy recursive function calls, hitting this pattern frequently.
-
-This bug does not affect quicksort because quicksort's recursive calls happen to not coincide with icache stalls in the same cycle.
 
 ---
 
