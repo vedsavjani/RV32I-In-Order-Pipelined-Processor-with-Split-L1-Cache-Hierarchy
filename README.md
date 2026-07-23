@@ -441,16 +441,7 @@ Set the instruction `FILE` to the `.txt` matching the test (e.g. `mem/test2.txt`
 **Step 2 — compile and run:**
 ```bash
 cd tb
-iverilog -g2012 -o sim.vvp \
-  ../rtl/top.sv ../rtl/riscv_core.sv ../rtl/datapath.sv \
-  ../rtl/controller.sv ../rtl/hazard_unit.sv \
-  ../rtl/i_cache.sv ../rtl/d_cache.sv \
-  ../rtl/icache_mem.sv ../rtl/dcache_mem.sv \
-  ../rtl/data_pipes.sv ../rtl/control_pipes.sv \
-  ../rtl/regfile.sv ../rtl/alu.sv ../rtl/adder.sv \
-  ../rtl/muxes.sv ../rtl/extend.sv \
-  ../rtl/maindec.sv ../rtl/aludec.sv \
-  test1_tb.sv   # replace with the testbench matching whatever you set FILE to above
+iverilog -g2012 -o sim.vvp ../rtl/*.sv test1_tb.sv   # replace with the testbench matching whatever you set FILE to above
 vvp sim.vvp
 ```
 
