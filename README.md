@@ -496,19 +496,15 @@ Before integrating with the pipeline, both caches were verified independently wi
 
 ### Key Bugs Found During Integration Testing
 
-Six bugs actually held things up during pipeline + cache integration — mostly one-cycle timing mismatches that only surfaced once the cache FSMs and the hazard unit started talking to each other. Found mostly by staring at `$display` traces and diffing waveforms in GTKWave until something looked off.
+Four bugs actually held things up during pipeline + cache integration — mostly one-cycle timing mismatches that only surfaced once the cache FSMs and the hazard unit started talking to each other. Found mostly by staring at `$display` traces and diffing waveforms in GTKWave until something looked off.
 
 **1. PC moved on before the stall actually kicked in.** The first instruction fetched right after a cold-start icache miss came out wrong. `icache_stall` was derived from a *registered* `hit_miss`, so the stall arrived one cycle later than it needed to — by then the PC had already advanced. Fix was driving it straight off `~i_mrden` instead, which is combinational and goes high the same cycle the miss is detected.
 
 **2. D-cache stalled on every single cycle**, even with nothing happening in MEM. `dcache_stall = ~dcache_hit` doesn't check whether there's an actual load/store in flight, so with no memory op active it just sat there stalling forever. Gated it with `mem_active`: `dcache_stall = ~dcache_hit & (rden | MemWriteM)`.
 
-**3. Close cousin of #2** — the stall was releasing one cycle too early this time. `hit_miss` would go high, the pipeline would unstall, but `dout` is a registered output and hadn't actually landed yet — so the wrong value got written into a register. Registering `hit_miss` (gated with `mem_active`) fixed it: the stall now only releases once `dout` is genuinely valid.
+**3. The D-cache stall was releasing one cycle too early.** `hit_miss` would go high, the pipeline would unstall, but `dout` is a registered output and hadn't actually landed yet — so the wrong value got written into a register. Registering `hit_miss` (gated with `mem_active`) fixed it: the stall now only releases once `dout` is genuinely valid.
 
-**4. Quicksort's array kept coming back corrupted** — every other element read as zero. Turned out to be a `$readmemh` offset issue: it was loading data at word offset `32'h2000>>2` (treating memory as 4-byte words), but `dcache_mem` is indexed by 64-bit words. Switching to `32'h2000>>3` fixed it.
-
-**5. `lui` was triggering a load-use stall it had no business triggering.** The hazard unit was checking `ResultSrcE[0]` to detect loads, but `lui` happens to set that same bit. Fix was checking the full `ResultSrcE == 3'b001`, which is only true for `lw`.
-
-**6. Caught way earlier, before the caches were even in the picture** — every branch (`bne`/`blt`/`bge`) went the wrong direction inside loops. `branchtakenE` was reading `funct3` from the decode stage instead of `funct3E` from EX, so the condition being evaluated was one instruction stale. Fixed by using the EX-stage signal everywhere the branch condition is checked.
+**4. `lui` was triggering a load-use stall that didn't apply to it.** The hazard unit was checking `ResultSrcE[0]` to detect loads, but `lui` happens to set that same bit. Fix was checking the full `ResultSrcE == 3'b001`, which is only true for `lw`.
 
 ---
 
