@@ -438,10 +438,9 @@ dcache_mem #(.FILE(""))                dcm( ... );   // initial data — only if
 
 Set the instruction `FILE` to the `.txt` matching the test (e.g. `mem/test2.txt`, `mem/quicksort.txt`). Only set the data `FILE` for programs that actually need initial data preloaded into the D-cache — currently `test2` (`mem/test2_data.txt`), `test3b` (`mem/test3b_data.txt`), and `quicksort` (`mem/quicksort_data.txt`). Everything else (`test1`, `test3a`, `test3c`, `test4a`–`test4c`, `hh_test`) builds up its own data through `sw` instructions at runtime, so leave the data `FILE` as `""`.
 
-**Step 2 — compile and run:**
+**Step 2 — compile and run (from the repo root):**
 ```bash
-cd tb
-iverilog -g2012 -o sim.vvp ../rtl/*.sv test1_tb.sv   # replace with the testbench matching whatever you set FILE to above
+iverilog -g2012 -o sim.vvp rtl/*.sv tb/test1_tb.sv   # replace with the testbench matching whatever you set FILE to above
 vvp sim.vvp
 ```
 
@@ -453,14 +452,14 @@ Step 1 PASSED
 ```
 Every testbench also writes a `dump.vcd` waveform (`gtkwave dump.vcd`) if you want to step through signal-level behavior instead of just the pass/fail line.
 
-**Running cache isolation tests** (drive the cache directly, no CPU/top.sv involved):
+**Running cache isolation tests** (drive the cache directly, no CPU/top.sv involved — still from the repo root):
 ```bash
 # D-cache
-iverilog -g2012 -o sim.vvp ../rtl/d_cache.sv ../rtl/dcache_mem.sv d_cache_tb.sv
+iverilog -g2012 -o sim.vvp rtl/d_cache.sv rtl/dcache_mem.sv tb/d_cache_tb.sv
 vvp sim.vvp
 
 # I-cache
-iverilog -g2012 -o sim.vvp ../rtl/i_cache.sv ../rtl/icache_mem.sv i_cache_tb.sv
+iverilog -g2012 -o sim.vvp rtl/i_cache.sv rtl/icache_mem.sv tb/i_cache_tb.sv
 vvp sim.vvp
 ```
 
