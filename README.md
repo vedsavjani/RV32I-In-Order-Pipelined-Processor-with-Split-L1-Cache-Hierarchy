@@ -151,7 +151,7 @@ end
 
 The hazard unit handles five categories of hazards:
 
-<!-- INSERT HAND-DRAWN SCHEMATIC: Hazard unit block showing all inputs (rs1D, rs2D, rdE, rdM, ResultSrcE, ResultSrcM, RegWriteE, RegWriteM, pcsrcE, icache_hit, dcache_hit, mem_active) and all outputs (stallF, stallD, stallE, stallM, flushD, flushE, flushW, forwardAE, forwardBE) -->
+![Hazard unit block diagram](schematics/haz_unit_block_diag.png)
 
 **1. Data Hazards — Forwarding**
 
