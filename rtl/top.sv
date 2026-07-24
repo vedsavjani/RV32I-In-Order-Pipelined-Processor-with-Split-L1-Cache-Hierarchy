@@ -26,7 +26,7 @@ module top(
     .d(d_mdout),
     .q(d_mdin));
 
-    icache_mem #(.FILE("mem/test1.txt")) icm(
+    icache_mem #(.FILE("mem/test4b.txt")) icm(
     .clk(clk), 
     .mrdaddress(i_mrdaddress[13:2]),
     .mrden(i_mrden),

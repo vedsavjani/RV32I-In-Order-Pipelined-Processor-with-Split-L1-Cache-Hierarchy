@@ -1,6 +1,6 @@
 # RV32I In-Order Pipelined Processor with Split L1 Cache Hierarchy
 
-A fully functional 5-stage pipelined RISC-V processor implementing the complete RV32I instruction set, integrated with a split L1 instruction and data cache system. Designed, implemented, and verified entirely in SystemVerilog — simulated in iverilog and synthesized in Vivado targeting the Nexys A7 FPGA.
+A fully functional and synthesisable 5-stage pipelined RISC-V processor implementing the complete RV32I instruction set, integrated with a split L1 instruction and data cache system. Designed, implemented, and verified entirely in SystemVerilog — simulated in iverilog and synthesized in Vivado targeting the Nexys A7 FPGA.
 
 **Author**
 Ved Savjani
@@ -14,7 +14,7 @@ BTech ECE, IIIT Bangalore
 - RARS (assembling/verifying test programs and dumping instruction/data hex)
 - Godbolt (compiling C to RISC-V assembly, used for quicksort)
 
-> 🚧 **Work in progress:** Dijkstra's algorithm (Section 6) is still being debugged, and full post-implementation timing (Section 7) is pending board-level XDC constraints.
+> 🚧 **Work in progress:** Full post-implementation timing (Section 7) is pending board-level XDC constraints — will be added once the board is available.
 
 ---
 
@@ -58,7 +58,8 @@ This project implements a complete RISC-V SoC subsystem: a 5-stage in-order pipe
 │   ├── muxes.sv            # All datapath muxes
 │   ├── extend.sv           # Immediate sign extension
 │   ├── maindec.sv          # Main control decoder
-│   └── aludec.sv           # ALU control decoder
+│   ├── aludec.sv           # ALU control decoder
+│   └── constraints.xdc     # Vivado XDC constraints (clock, I/O delays)
 │
 ├── tb/
 │   ├── test1_tb.sv         # Sequential ADDIs
@@ -72,14 +73,17 @@ This project implements a complete RISC-V SoC subsystem: a 5-stage in-order pipe
 │   ├── hh_tb.sv            # Harris & Harris test program
 │   ├── quicksort_tb.sv     # 10-element quicksort
 │   ├── d_cache_tb.sv       # D-cache isolation testbench
-│   └── i_cache_tb.sv       # I-cache isolation testbench
+│   ├── i_cache_tb.sv       # I-cache isolation testbench
+│   └── perf_monitor.sv     # Shared performance-counting module
 │
-└── mem/
-    ├── hh_test.txt             # H&H test program hex
-    ├── quicksort.txt           # Quicksort instruction hex
-    ├── quicksort_data.txt      # Quicksort initial array data
-    ├── test1.txt ... test4c.txt
-    └── test2_data.txt, test3b_data.txt
+├── mem/
+│   ├── hh_test.txt             # H&H test program hex
+│   ├── quicksort.txt           # Quicksort instruction hex
+│   ├── quicksort_data.txt      # Quicksort initial array data
+│   ├── test1.txt ... test4c.txt
+│   └── test2_data.txt, test3b_data.txt
+│
+└── run_tests.sh            # Automated test runner (see Section 5)
 ```
 
 Note: each program has a matching `mem/*.asm` (human-readable RISC-V source) alongside the hex dump loaded via `$readmemh`.
@@ -475,18 +479,11 @@ Step 1 PASSED
     Misses                      :          0
     Hit Rate                    :        n/a  (no accesses)
 ```
-Every testbench also writes a `dump.vcd` waveform (`gtkwave dump.vcd`) if you want to step through signal-level behavior instead of just the pass/fail line.
+Every testbench also writes a `dump.vcd` waveform (`gtkwave dump.vcd`) if you want to step through signal-level behavior instead of just the pass/fail line. For example, the waveform below is from `test4b` (LRU eviction) — `icache_stall`/`icache_hit` and `pcF`/`instrF` show the fetch stage repeatedly stalling and retrying on each cold cache miss before the instruction is captured into `instrD`:
 
-**Running cache isolation tests** (drive the cache directly, no CPU/top.sv involved — still from the repo root):
-```bash
-# D-cache
-iverilog -g2012 -o sim.vvp rtl/d_cache.sv rtl/dcache_mem.sv tb/d_cache_tb.sv
-vvp sim.vvp
+![GTKWave waveform for test4b (LRU eviction)](schematics/waveform.png)
 
-# I-cache
-iverilog -g2012 -o sim.vvp rtl/i_cache.sv rtl/icache_mem.sv tb/i_cache_tb.sv
-vvp sim.vvp
-```
+Repeating these three steps by hand for every test — plus the two cache-isolation testbenches, which drive `d_cache`/`i_cache` directly instead of going through `top.sv` — gets old fast. That's exactly what the [Automated Test Runner](#automated-test-runner) below does in one shot.
 
 ### Automated Test Runner
 
@@ -626,9 +623,7 @@ Running it surfaced a data-loading issue: the initial array was landing in the w
 
 **Result:** Output array `[5, 11, 12, 22, 25, 33, 45, 64, 78, 90]` — now checked programmatically against the expected sorted array by the testbench itself (see the `Quicksort` row in the [Automated Test Runner](#automated-test-runner) output above), not just eyeballed from a memory dump.
 
-### Dijkstra's Algorithm — 🚧 In Progress
-
-After quicksort was working, the next step was trying Dijkstra's shortest-path algorithm on the same setup. It isn't working yet — there's a bug somewhere in how it runs on the hardware that's still being tracked down. Not claiming this one as verified until it's actually fixed and passing.
+More real-world programs will be added once the board is available and bring-up work begins.
 
 ---
 

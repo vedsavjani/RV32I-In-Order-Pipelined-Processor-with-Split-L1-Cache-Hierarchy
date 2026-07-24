@@ -15,6 +15,8 @@ module testbench();
         .dc_rden(dut.rv.dcache_rden), .dc_wren(dut.rv.MemWriteM), .dc_state(dut.rv.dc.state), .dc_mrden(dut.rv.dc.mrden));
 
     initial begin
+        $dumpfile("dump.vcd");
+        $dumpvars(0, dut);
         reset <= 1; #22; reset <= 0;
     end
 
