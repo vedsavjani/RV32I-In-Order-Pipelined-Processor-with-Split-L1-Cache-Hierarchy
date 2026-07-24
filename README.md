@@ -449,16 +449,31 @@ vvp sim.vvp
 --- register check ---
 x1=1 x2=2 x3=3 x4=4
 Step 1 PASSED
-========================================================
- PERF SUMMARY: Test1
-========================================================
- Result                  : PASS
- Total cycles executed    : 47
- Stall cycles  F/D/E/M    : 32 / 32 / 0 / 0
- Flush cycles  D/E/W      : 1 / 32 / 0
- I-cache accesses/misses  : 31 / 16  (48.4% hit)
- D-cache accesses/misses  : 0 / 0  (0.0% hit)
-========================================================
+  Result                        : PASS
+
+  Execution
+    Total cycles executed       :         47
+
+  Pipeline Stalls (cycles a stage was held)
+    Fetch stage                 :         32
+    Decode stage                :         32
+    Execute stage               :          0
+    Memory stage                :          0
+
+  Pipeline Flushes (bubbles inserted)
+    Decode stage                :          1
+    Execute stage               :         32
+    Writeback stage             :          0
+
+  Instruction Cache
+    Accesses                    :         31
+    Misses                      :         16
+    Hit Rate                    :      48.4%
+
+  Data Cache
+    Accesses                    :          0
+    Misses                      :          0
+    Hit Rate                    :        n/a  (no accesses)
 ```
 Every testbench also writes a `dump.vcd` waveform (`gtkwave dump.vcd`) if you want to step through signal-level behavior instead of just the pass/fail line.
 
@@ -481,42 +496,66 @@ Running all 12 testbenches manually one-by-one (each needing its own `top.sv` ed
 ./run_tests.sh
 ```
 
-Every pipeline-integration testbench is also wired to a shared `perf_monitor` module (`tb/perf_monitor.sv`) that counts, purely by observing the DUT's own hazard-unit and cache FSM signals (no RTL changes): total cycles executed, stall cycles per stage (`stallF/D/E/M`), flush cycles per stage (`flushD/E/W`), and I-cache/D-cache accesses, misses, and hit rate. Hit/miss counting is edge-precise — it samples each cache's FSM only on the cycle it's actually deciding idle vs. miss, so multi-cycle miss handling isn't double-counted.
+Every pipeline-integration testbench is also wired to a shared `perf_monitor` module (`tb/perf_monitor.sv`) that counts, purely by observing the DUT's own hazard-unit and cache FSM signals (no RTL changes): total cycles executed, stall cycles per stage, flush cycles per stage, and I-cache/D-cache accesses, misses, and hit rate. Hit/miss counting is edge-precise — it samples each cache's FSM only on the cycle it's actually deciding idle vs. miss, so multi-cycle miss handling isn't double-counted.
 
-Real output from this repo, current as of this test suite:
+The script reports one test fully — result, then a breakdown by pipeline stage and cache — before moving to the next, rather than cramming everything into one wide table. Real output, test 1 of 12:
 
 ```
-================================================================================================
- PIPELINE INTEGRATION TESTS
-================================================================================================
-Test       Result   Cycles Stalls F/D/E/M   Flush D/E/W  I-cache acc/miss/hit%  D-cache acc/miss/hit%
-------------------------------------------------------------------------------------------------
-Test1      PASS         47 32/32/0/0        1/32/0       31/16/48.4%            0/0/0.0%
-Test2      PASS        197 132/132/3/3      1/129/3      130/65/50.0%           3/1/66.7%
-Test3a     PASS        197 132/132/4/4      1/128/4      130/65/50.0%           5/1/80.0%
-Test3b     PASS        197 132/132/3/3      1/129/3      130/65/50.0%           3/1/66.7%
-Test3c     PASS        197 132/132/4/4      1/128/4      130/65/50.0%           5/1/80.0%
-Test4a     PASS        197 132/132/5/5      1/127/5      130/65/50.0%           7/1/85.7%
-Test4b     PASS        397 269/269/18/18    1/251/18     257/129/49.8%          18/6/66.7%
-Test4c     PASS        497 335/335/15/15    1/320/15     325/163/49.8%          15/5/66.7%
-HH_Test    PASS       4997 3332/3332/5/5    3/3327/5     3330/1665/50.0%        7/1/85.7%
-Quicksort  PASS     499997 333338/333338/42/42 574/333296/42 333318/166659/50.0%    3148/2815/10.6%
+================================================================================
+ TEST 1/12 : Test1  —  5 sequential ADDIs, cold-start icache stall
+================================================================================
+  Result                        : PASS
 
-================================================================================================
- CACHE ISOLATION TESTS
-================================================================================================
-Test                   Result Cases Passed
-------------------------------------------------------------------------------------------------
-D-Cache-Isolation      PASS   17/17
-I-Cache-Isolation      PASS   7/7
+  Execution
+    Total cycles executed       :         47
 
-================================================================================================
- OVERALL: 12/12 test suites passed
+  Pipeline Stalls (cycles a stage was held)
+    Fetch stage                 :         32
+    Decode stage                :         32
+    Execute stage               :          0
+    Memory stage                :          0
+
+  Pipeline Flushes (bubbles inserted)
+    Decode stage                :          1
+    Execute stage               :         32
+    Writeback stage             :          0
+
+  Instruction Cache
+    Accesses                    :         31
+    Misses                      :         16
+    Hit Rate                    :      48.4%
+
+  Data Cache
+    Accesses                    :          0
+    Misses                      :          0
+    Hit Rate                    :        n/a  (no accesses)
+```
+
+...and so on through all 10 pipeline tests, then the 2 cache-isolation testbenches (which report per-case PASS/FAIL lines instead, since they're already granular). It ends with a plain PASS/FAIL list, not another dense table:
+
+```
+================================================================================
+ SUMMARY
+================================================================================
+  Test1                    PASS
+  Test2                    PASS
+  Test3a                   PASS
+  Test3b                   PASS
+  Test3c                   PASS
+  Test4a                   PASS
+  Test4b                   PASS
+  Test4c                   PASS
+  HH_Test                  PASS
+  Quicksort                PASS
+  D-Cache-Isolation        PASS
+  I-Cache-Isolation        PASS
+--------------------------------------------------------------------------------
+ 12/12 test suites passed
  Per-test logs + waveforms: sim_logs/
-================================================================================================
+================================================================================
 ```
 
-Quicksort's I-cache hit rate sits at exactly 50% because every fetch retries once (miss detected → 1-cycle memory fetch → hit next cycle) under this cache's 2-way/1-word-block FSM — same reason every micro-test above lands near 50%. D-cache hit rate varies more directly with each program's data locality (10.6% for quicksort's array-heavy access pattern vs. 85.7% for the mostly-register-resident H&H test).
+Quicksort's I-cache hit rate sits at exactly 50% because every fetch retries once (miss detected → 1-cycle memory fetch → hit next cycle) under this cache's 2-way/1-word-block FSM — same reason every micro-test lands near 50%. D-cache hit rate varies more directly with each program's data locality (11.4% for quicksort's array-heavy access pattern vs. 85.7% for the mostly-register-resident H&H test).
 
 Per-test compile/sim logs and `.vcd` waveform dumps land in `sim_logs/` (gitignored) for anything that needs deeper debugging beyond the summary table.
 

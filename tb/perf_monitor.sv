@@ -55,6 +55,9 @@ module perf_monitor(
         end
     end
 
+    // run_tests.sh pulls everything between these two markers out of the raw
+    // sim log (which is otherwise full of per-cycle debug trace) so it can
+    // show a clean per-test block on the console without the noise.
     task automatic print_summary(input bit pass, input string test_name);
         integer ic_hits, dc_hits;
         real ic_hit_rate, dc_hit_rate;
@@ -64,20 +67,41 @@ module perf_monitor(
             ic_hit_rate = (ic_access_count > 0) ? (100.0 * ic_hits) / ic_access_count : 0.0;
             dc_hit_rate = (dc_access_count > 0) ? (100.0 * dc_hits) / dc_access_count : 0.0;
 
-            $display("========================================================");
-            $display(" PERF SUMMARY: %s", test_name);
-            $display("========================================================");
-            $display(" Result                  : %s", pass ? "PASS" : "FAIL");
-            $display(" Total cycles executed    : %0d", cycle_count);
-            $display(" Stall cycles  F/D/E/M    : %0d / %0d / %0d / %0d",
-                      stallF_count, stallD_count, stallE_count, stallM_count);
-            $display(" Flush cycles  D/E/W      : %0d / %0d / %0d",
-                      flushD_count, flushE_count, flushW_count);
-            $display(" I-cache accesses/misses  : %0d / %0d  (%0.1f%% hit)",
-                      ic_access_count, ic_miss_count, ic_hit_rate);
-            $display(" D-cache accesses/misses  : %0d / %0d  (%0.1f%% hit)",
-                      dc_access_count, dc_miss_count, dc_hit_rate);
-            $display("========================================================");
+            $display("@@@PERF_BLOCK_START@@@");
+
+            $display("  %-30s: %s", "Result", pass ? "PASS" : "FAIL");
+            $display("");
+            $display("  Execution");
+            $display("    %-28s: %10d", "Total cycles executed", cycle_count);
+            $display("");
+            $display("  Pipeline Stalls (cycles a stage was held)");
+            $display("    %-28s: %10d", "Fetch stage", stallF_count);
+            $display("    %-28s: %10d", "Decode stage", stallD_count);
+            $display("    %-28s: %10d", "Execute stage", stallE_count);
+            $display("    %-28s: %10d", "Memory stage", stallM_count);
+            $display("");
+            $display("  Pipeline Flushes (bubbles inserted)");
+            $display("    %-28s: %10d", "Decode stage", flushD_count);
+            $display("    %-28s: %10d", "Execute stage", flushE_count);
+            $display("    %-28s: %10d", "Writeback stage", flushW_count);
+            $display("");
+            $display("  Instruction Cache");
+            $display("    %-28s: %10d", "Accesses", ic_access_count);
+            $display("    %-28s: %10d", "Misses", ic_miss_count);
+            if (ic_access_count > 0)
+                $display("    %-28s: %9.1f%%", "Hit Rate", ic_hit_rate);
+            else
+                $display("    %-28s:        n/a  (no accesses)", "Hit Rate");
+            $display("");
+            $display("  Data Cache");
+            $display("    %-28s: %10d", "Accesses", dc_access_count);
+            $display("    %-28s: %10d", "Misses", dc_miss_count);
+            if (dc_access_count > 0)
+                $display("    %-28s: %9.1f%%", "Hit Rate", dc_hit_rate);
+            else
+                $display("    %-28s:        n/a  (no accesses)", "Hit Rate");
+
+            $display("@@@PERF_BLOCK_END@@@");
 
             $display("CSV,%s,%s,%0d,%0d,%0d,%0d,%0d,%0d,%0d,%0d,%0d,%0d,%0.1f,%0d,%0d,%0.1f",
                       test_name, pass ? "PASS" : "FAIL", cycle_count,

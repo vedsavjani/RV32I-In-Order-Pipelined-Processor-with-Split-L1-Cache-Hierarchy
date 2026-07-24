@@ -50,7 +50,7 @@ module testbench();
         end
     endfunction
 
-    initial #5000000 begin
+    initial #3000000 begin
         int expected[0:9];
         int actual[0:9];
         expected[0] = 5;  expected[1] = 11; expected[2] = 12; expected[3] = 22; expected[4] = 25;
