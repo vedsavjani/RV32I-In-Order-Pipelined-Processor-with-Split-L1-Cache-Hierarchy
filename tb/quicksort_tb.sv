@@ -6,6 +6,15 @@ module testbench();
 
     top dut(clk, reset, WriteData, DataAdr, MemWrite);
 
+    logic pass;
+
+    perf_monitor perf(
+        .clk(clk), .reset(reset),
+        .stallF(dut.rv.stallF), .stallD(dut.rv.stallD), .stallE(dut.rv.stallE), .stallM(dut.rv.stallM),
+        .flushD(dut.rv.flushD), .flushE(dut.rv.flushE), .flushW(dut.rv.flushW),
+        .ic_rden(dut.rv.ic.rden), .ic_state(dut.rv.ic.state), .ic_mrden(dut.rv.ic.mrden),
+        .dc_rden(dut.rv.dcache_rden), .dc_wren(dut.rv.MemWriteM), .dc_state(dut.rv.dc.state), .dc_mrden(dut.rv.dc.mrden));
+
     initial begin
         $dumpfile("dump.vcd");
         $dumpvars(0, testbench);
@@ -42,17 +51,26 @@ module testbench();
     endfunction
 
     initial #5000000 begin
+        int expected[0:9];
+        int actual[0:9];
+        expected[0] = 5;  expected[1] = 11; expected[2] = 12; expected[3] = 22; expected[4] = 25;
+        expected[5] = 33; expected[6] = 45; expected[7] = 64; expected[8] = 78; expected[9] = 90;
+
+        actual[0] = read_mem(32'h2064); actual[1] = read_mem(32'h2068);
+        actual[2] = read_mem(32'h206c); actual[3] = read_mem(32'h2070);
+        actual[4] = read_mem(32'h2074); actual[5] = read_mem(32'h2078);
+        actual[6] = read_mem(32'h207c); actual[7] = read_mem(32'h2080);
+        actual[8] = read_mem(32'h2084); actual[9] = read_mem(32'h2088);
+
         $display("=== Sorted Array ===");
-        $display("mem[0x2064] = %0d", read_mem(32'h2064));
-        $display("mem[0x2068] = %0d", read_mem(32'h2068));
-        $display("mem[0x206c] = %0d", read_mem(32'h206c));
-        $display("mem[0x2070] = %0d", read_mem(32'h2070));
-        $display("mem[0x2074] = %0d", read_mem(32'h2074));
-        $display("mem[0x2078] = %0d", read_mem(32'h2078));
-        $display("mem[0x207c] = %0d", read_mem(32'h207c));
-        $display("mem[0x2080] = %0d", read_mem(32'h2080));
-        $display("mem[0x2084] = %0d", read_mem(32'h2084));
-        $display("mem[0x2088] = %0d", read_mem(32'h2088));
-        $stop;
+        pass = 1;
+        for (int i = 0; i < 10; i++) begin
+            $display("mem[0x%04h] = %0d (expected %0d)", 32'h2064 + i*4, actual[i], expected[i]);
+            if (actual[i] !== expected[i]) pass = 0;
+        end
+        if (pass) $display("Quicksort PASSED");
+        else      $display("Quicksort FAILED");
+        perf.print_summary(pass, "Quicksort");
+        $finish;
     end
 endmodule

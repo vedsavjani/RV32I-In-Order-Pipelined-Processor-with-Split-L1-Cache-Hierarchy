@@ -121,6 +121,8 @@ module i_cache_tb();
             $display("I-Cache: ALL TESTS PASSED");
         else
             $display("I-Cache: SOME TESTS FAILED");
+        $display("CSV,I-Cache-Isolation,%s,%0d,%0d",
+                  (fail_count == 0) ? "PASS" : "FAIL", pass_count, pass_count+fail_count);
         $finish;
     end
 

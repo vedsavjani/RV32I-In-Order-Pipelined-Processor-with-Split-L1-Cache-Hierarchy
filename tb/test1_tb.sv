@@ -5,6 +5,15 @@ module testbench();
 
     top dut(clk, reset, writedataM, aluresultM, MemWriteM);
 
+    logic pass;
+
+    perf_monitor perf(
+        .clk(clk), .reset(reset),
+        .stallF(dut.rv.stallF), .stallD(dut.rv.stallD), .stallE(dut.rv.stallE), .stallM(dut.rv.stallM),
+        .flushD(dut.rv.flushD), .flushE(dut.rv.flushE), .flushW(dut.rv.flushW),
+        .ic_rden(dut.rv.ic.rden), .ic_state(dut.rv.ic.state), .ic_mrden(dut.rv.ic.mrden),
+        .dc_rden(dut.rv.dcache_rden), .dc_wren(dut.rv.MemWriteM), .dc_state(dut.rv.dc.state), .dc_mrden(dut.rv.dc.mrden));
+
     initial begin
         $dumpfile("dump.vcd");
         $dumpvars(0, dut);
@@ -26,14 +35,14 @@ module testbench();
         $display("x1=%0d x2=%0d x3=%0d x4=%0d",
             dut.rv.dp.rf.rf[1], dut.rv.dp.rf.rf[2],
             dut.rv.dp.rf.rf[3], dut.rv.dp.rf.rf[4]);
-        if (dut.rv.dp.rf.rf[1] === 32'd1 &&
-            dut.rv.dp.rf.rf[2] === 32'd2 &&
-            dut.rv.dp.rf.rf[3] === 32'd3 &&
-            dut.rv.dp.rf.rf[4] === 32'd4)
-            $display("Step 1 PASSED");
-        else
-            $display("Step 1 FAILED");
-        $stop;
+        pass = (dut.rv.dp.rf.rf[1] === 32'd1 &&
+                dut.rv.dp.rf.rf[2] === 32'd2 &&
+                dut.rv.dp.rf.rf[3] === 32'd3 &&
+                dut.rv.dp.rf.rf[4] === 32'd4);
+        if (pass) $display("Step 1 PASSED");
+        else      $display("Step 1 FAILED");
+        perf.print_summary(pass, "Test1");
+        $finish;
     end
 
 endmodule

@@ -163,6 +163,8 @@ module d_cache_tb();
             $display("D-Cache: ALL TESTS PASSED");
         else
             $display("D-Cache: SOME TESTS FAILED");
+        $display("CSV,D-Cache-Isolation,%s,%0d,%0d",
+                  (fail_count == 0) ? "PASS" : "FAIL", pass_count, pass_count+fail_count);
         $finish;
     end
 

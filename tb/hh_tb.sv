@@ -7,6 +7,15 @@ module testbench();
 
     top dut(clk, reset, writedataM, aluresultM, MemWriteM);
 
+    logic pass;
+
+    perf_monitor perf(
+        .clk(clk), .reset(reset),
+        .stallF(dut.rv.stallF), .stallD(dut.rv.stallD), .stallE(dut.rv.stallE), .stallM(dut.rv.stallM),
+        .flushD(dut.rv.flushD), .flushE(dut.rv.flushE), .flushW(dut.rv.flushW),
+        .ic_rden(dut.rv.ic.rden), .ic_state(dut.rv.ic.state), .ic_mrden(dut.rv.ic.mrden),
+        .dc_rden(dut.rv.dcache_rden), .dc_wren(dut.rv.MemWriteM), .dc_state(dut.rv.dc.state), .dc_mrden(dut.rv.dc.mrden));
+
     initial begin
         $dumpfile("dump.vcd");
         $dumpvars(0, dut);
@@ -30,13 +39,13 @@ module testbench();
         $display("cache[0x2000] = 0x%08h (expected 0x00000007)", dut.rv.dc.mem0[0][31:0]);
         $display("cache[0x2004] = 0x%08h (expected 0x00000019)", dut.rv.dc.mem0[0][63:32]);
 
-        if (dut.rv.dc.mem0[0][31:0]  === 32'd7 &&
-            dut.rv.dc.mem0[0][63:32] === 32'd25)
-            $display("Simulation succeeded");
-        else
-            $display("Simulation failed");
+        pass = (dut.rv.dc.mem0[0][31:0]  === 32'd7 &&
+                dut.rv.dc.mem0[0][63:32] === 32'd25);
+        if (pass) $display("Simulation succeeded");
+        else      $display("Simulation failed");
+        perf.print_summary(pass, "HH_Test");
 
-        $stop;
+        $finish;
     end
 
 endmodule
