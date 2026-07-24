@@ -14,7 +14,7 @@ BTech ECE, IIIT Bangalore
 - RARS (assembling/verifying test programs and dumping instruction/data hex)
 - Godbolt (compiling C to RISC-V assembly, used for quicksort)
 
-> 🚧 **Work in progress:** Vivado synthesis results (Section 7) and the hand-drawn datapath/FSM schematics (Sections 2–4) are still pending — see inline placeholders.
+> 🚧 **Work in progress:** Dijkstra's algorithm (Section 6) is still being debugged, and full post-implementation timing (Section 7) is pending board-level XDC constraints.
 
 ---
 
@@ -35,8 +35,6 @@ BTech ECE, IIIT Bangalore
 ### System Overview
 
 This project implements a complete RISC-V SoC subsystem: a 5-stage in-order pipelined processor core with a split L1 cache hierarchy, backed by separate instruction and data memories.
-
-<!-- INSERT DIAGRAM (Claude Design): Top-level system block diagram showing CPU core → I-cache → icache_mem and CPU core → D-cache → dcache_mem, with arrows showing data/address flow -->
 
 ### File Structure
 
@@ -131,9 +129,11 @@ The processor implements the standard 5-stage RISC-V pipeline:
 - **WB** — Write result back to register file
 
 
-*insert the processor schematics here*
+![riscv_core internal block diagram](schematics/riscv_core_internal.png)
 
+The detailed datapath below starts from the standard Harris & Harris 5-stage pipeline (which only covers R-type, `lw`, `sw`, `beq`, `jal`, `addi`) and is annotated with every addition this implementation makes on top of it to support `bne`/`blt`/`bge`, `jalr`, `auipc`, `lui`, and the full RV32I ALU op set:
 
+![Annotated pipeline datapath with extensions beyond the H&H baseline](schematics/pipeline_annotated.png)
 
 ### Pipeline Registers
 
@@ -281,13 +281,7 @@ logic [MWIDTH-1:0] mem0 [0:NSETS-1];  // 64-bit (2-word block)
 
 ### Cache FSM
 
-```mermaid
-stateDiagram-v2
-    [*] --> IDLE : reset
-    IDLE --> IDLE : no request (~rden & ~wren)\nor cache hit (way0..way3)
-    IDLE --> MISS : request (rden | wren) and miss in all 4 ways
-    MISS --> IDLE : unconditional, after 1 cycle
-```
+![D-cache FSM](schematics/dcache_fsm.png)
 
 **IDLE state:**
 - Compare incoming address tag against all 4 ways at the indexed set
@@ -397,13 +391,7 @@ When the I-cache misses, the instruction isn't ready yet. The pipeline must free
 
 **Critical implementation detail:** The stall signal must be driven by `~i_mrden` (combinational), not by a registered version of `icache_hit`. Using a registered signal caused the PC to advance one cycle before the stall took effect, fetching the wrong instruction.
 
-```mermaid
-stateDiagram-v2
-    [*] --> IDLE : reset
-    IDLE --> IDLE : no request (~rden)\nor cache hit (way0 or way1)
-    IDLE --> MISS : rden and miss in both ways
-    MISS --> IDLE : unconditional, after 1 cycle
-```
+![I-cache FSM](schematics/icache_fsm.png)
 
 ---
 
@@ -504,8 +492,6 @@ Before integrating with the pipeline, both caches were verified independently wi
 ### Pipeline Integration Micro-Tests
 
 8 targeted micro-programs designed to isolate specific hazard + cache interactions:
-
-<!-- INSERT DIAGRAM (Claude Design): Table or flowchart showing the 8 tests and what each one specifically stresses -->
 
 | Test | Program | What it verifies |
 |------|---------|-----------------|
